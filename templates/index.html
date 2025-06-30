@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Image Capture</title>
+    <!-- Tailwind CSS CDN for easy styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                },
+            },
+        };
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f2f5;
+        }
+        /* Hide elements initially to show messages */
+        #videoElement, #canvas, #messageBox {
+            display: none;
+        }
+        /* Explicitly hide buttons initially via CSS, JavaScript will control display */
+        #captureButton, #retakeButton {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md text-center">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Capture Your Image</h1>
+
+        <!-- Message Box for User Feedback -->
+        <div id="messageBox" class="p-3 mb-4 rounded-lg text-sm hidden" role="alert"></div>
+
+        <!-- Video element to display camera stream -->
+        <video id="videoElement" autoplay playsinline class="w-full rounded-lg shadow-md mb-4 border border-gray-300"></video>
+
+        <!-- Canvas element to capture image frame -->
+        <canvas id="canvas" class="w-full rounded-lg shadow-md mb-4 border border-gray-300 hidden"></canvas>
+
+        <!-- Buttons for interaction -->
+        <div class="flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-4">
+            <button id="startButton"
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-full shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75">
+                Start Camera
+            </button>
+            <button id="captureButton"
+                    class="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-full shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75">
+                Capture Image
+            </button>
+            <button id="retakeButton"
+                    class="bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-3 px-6 rounded-full shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-opacity-75">
+                Retake
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('videoElement');
+        const canvas = document.getElementById('canvas');
+        const startButton = document.getElementById('startButton');
+        const captureButton = document.getElementById('captureButton');
+        const retakeButton = document.getElementById('retakeButton');
+        const messageBox = document.getElementById('messageBox');
+        let stream = null; // To store the camera stream
+
+        // Function to display messages to the user
+        function showMessage(message, type = 'info') {
+            messageBox.textContent = message;
+            messageBox.classList.remove('hidden', 'bg-red-100', 'text-red-800', 'bg-green-100', 'text-green-800', 'bg-blue-100', 'text-blue-800');
+            if (type === 'error') {
+                messageBox.classList.add('bg-red-100', 'text-red-800');
+            } else if (type === 'success') {
+                messageBox.classList.add('bg-green-100', 'text-green-800');
+            } else { // info
+                messageBox.classList.add('bg-blue-100', 'text-blue-800');
+            }
+            messageBox.style.display = 'block'; // Ensure message box is visible
+        }
+
+        // Function to hide the message box
+        function hideMessage() {
+            messageBox.style.display = 'none';
+        }
+
+        // Function to start the camera stream
+        async function startCamera() {
+            hideMessage();
+            try {
+                // Define camera constraints with fallback options
+                const constraints = [
+                    // Try rear camera first (ideal for mobile)
+                    { video: { facingMode: "environment" } },
+                    // Fallback to front camera if rear camera fails
+                    { video: { facingMode: "user" } },
+                    // Final fallback to any available camera
+                    { video: true }
+                ];
+
+                let success = false;
+                for (let i = 0; i < constraints.length; i++) {
+                    try {
+                        stream = await navigator.mediaDevices.getUserMedia(constraints[i]);
+                        success = true;
+                        break; // Exit loop on first successful stream
+                    } catch (err) {
+                        console.warn(`Attempt ${i + 1} to get camera failed:`, err);
+                        // Continue to the next constraint if this one fails
+                    }
+                }
+
+                if (!success) {
+                    throw new Error("Could not access any camera with the specified constraints.");
+                }
+
+                video.srcObject = stream;
+                video.style.display = 'block'; // Show video element
+                startButton.style.display = 'none'; // Hide start button
+                captureButton.style.display = 'block'; // Show capture button
+                showMessage('Camera started. Click "Capture Image" to take a photo.', 'info');
+
+                // Ensure video is playing before allowing capture
+                video.onloadedmetadata = () => {
+                    video.play();
+                };
+
+            } catch (err) {
+                console.error("Error accessing camera: ", err);
+                video.style.display = 'none'; // Hide video element on error
+                captureButton.style.display = 'none'; // Ensure capture button is hidden on error
+                
+                let errorMessage = '';
+                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                    errorMessage = 'Camera access denied. Please allow camera access in your browser settings and refresh the page.';
+                } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+                    errorMessage = 'No camera found on your device.';
+                } else if (err.name === 'NotReadableError') {
+                    errorMessage = 'Camera is already in use by another application. Please close other camera apps and try again.';
+                } else if (err.name === 'OverconstrainedError') {
+                    errorMessage = 'The requested camera constraints are not supported. Trying with basic camera access.';
+                } else if (err.name === 'NotSecureError' || (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost')) {
+                    errorMessage = 'Camera access requires a secure connection (HTTPS). Please ensure you are accessing the site over HTTPS.';
+                }
+                else {
+                    errorMessage = `Error: ${err.message}. Could not start camera.`;
+                }
+                showMessage(errorMessage, 'error');
+                startButton.style.display = 'block'; // Keep start button visible if camera fails
+            }
+        }
+
+        // Function to stop the camera stream
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+                stream = null; // Clear the stream reference
+            }
+        }
+
+        // Function to capture image from video stream
+        async function captureImage() {
+            hideMessage();
+            if (!stream) {
+                showMessage('Camera not started. Please start the camera first.', 'error');
+                return;
+            }
+
+            // Ensure video is ready before capturing
+            if (video.videoWidth === 0 || video.videoHeight === 0) {
+                showMessage('Camera not ready. Please wait a moment and try again.', 'error');
+                return;
+            }
+
+            // Set canvas dimensions to match video stream
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            // Draw the current video frame onto the canvas
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Get image data as base64 encoded JPEG
+            const imageDataURL = canvas.toDataURL('image/jpeg', 0.9); // Quality 0.9 for JPEG
+
+            // Hide video, show captured image on canvas
+            video.style.display = 'none';
+            canvas.style.display = 'block';
+            captureButton.style.display = 'none';
+            retakeButton.style.display = 'block';
+            showMessage('Image captured. Uploading...', 'info');
+
+            // Stop the camera stream after capture
+            stopCamera();
+
+            // Send the image data to the Flask backend
+            try {
+                const response = await fetch('/upload_image', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ image: imageDataURL }),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage(`Success: ${result.message}`, 'success');
+                    console.log('Image uploaded successfully:', result.filename);
+                } else {
+                    showMessage(`Error: ${result.message}`, 'error');
+                    console.error('Image upload failed:', result.message);
+                }
+            } catch (error) {
+                showMessage(`Upload failed: ${error.message}. Check server connection.`, 'error');
+                console.error('Error uploading image:', error);
+            }
+        }
+
+        // Function to retake the image
+        function retakeImage() {
+            hideMessage();
+            canvas.style.display = 'none'; // Hide canvas
+            video.style.display = 'none'; // Hide video (will be shown by startCamera)
+            retakeButton.style.display = 'none'; // Hide retake button
+            captureButton.style.display = 'none'; // Hide capture button (will be shown by startCamera)
+            startButton.style.display = 'block'; // Show start button to re-initiate camera
+            showMessage('Click "Start Camera" to take another photo.', 'info');
+        }
+
+        // Event Listeners
+        startButton.addEventListener('click', startCamera);
+        captureButton.addEventListener('click', captureImage);
+        retakeButton.addEventListener('click', retakeImage);
+
+        // Initial state setup
+        window.onload = () => {
+            startButton.style.display = 'block';
+            video.style.display = 'none';
+            canvas.style.display = 'none';
+            captureButton.style.display = 'none';
+            retakeButton.style.display = 'none';
+            showMessage('Click "Start Camera" to begin.', 'info');
+        };
+
+        // Handle page unload to clean up camera stream
+        window.addEventListener('beforeunload', () => {
+            stopCamera();
+        });
+    </script>
+</body>
+</html>
