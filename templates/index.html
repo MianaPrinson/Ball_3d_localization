@@ -3,268 +3,360 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Camera Image Capture</title>
-    <!-- Tailwind CSS CDN for easy styling -->
+    <title>Ball Measurement App</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        inter: ['Inter', 'sans-serif'],
-                    },
-                },
-            },
-        };
-    </script>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background-color: #f0f2f5;
-        }
-        /* Hide elements initially to show messages */
-        #videoElement, #canvas, #messageBox {
-            display: none;
-        }
-        /* Explicitly hide buttons initially via CSS, JavaScript will control display */
-        #captureButton, #retakeButton {
-            display: none;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
-    <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md text-center">
-        <h1 class="text-3xl font-bold text-gray-800 mb-6">Capture Your Image</h1>
 
-        <!-- Message Box for User Feedback -->
-        <div id="messageBox" class="p-3 mb-4 rounded-lg text-sm hidden" role="alert"></div>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Ball Localization App</h1>
 
-        <!-- Video element to display camera stream -->
-        <video id="videoElement" autoplay playsinline class="w-full rounded-lg shadow-md mb-4 border border-gray-300"></video>
+        <div class="message-box" id="messageBox"></div>
 
-        <!-- Canvas element to capture image frame -->
-        <canvas id="canvas" class="w-full rounded-lg shadow-md mb-4 border border-gray-300 hidden"></canvas>
+        <div class="video-container">
+            <video id="webcamFeed" autoplay playsinline></video>
+            <canvas id="measurementCanvas"></canvas>
+        </div>
 
-        <!-- Buttons for interaction -->
-        <div class="flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-4">
-            <button id="startButton"
-                    class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-full shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75">
-                Start Camera
-            </button>
-            <button id="captureButton"
-                    class="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-full shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75">
-                Capture Image
-            </button>
-            <button id="retakeButton"
-                    class="bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-3 px-6 rounded-full shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-opacity-75">
-                Retake
-            </button>
+        <div class="controls">
+            <button id="cameraActionBtn" class="btn-primary">Start Camera</button>
+            <button id="selectCenterBtn" class="btn-secondary" disabled>Select Center</button>
+            <button id="measureDiameterBtn" class="btn-secondary" disabled>Measure Diameter</button>
+            <button id="saveMeasurementBtn" class="btn-primary" disabled>Save Measurement</button>
+            <button id="resetBtn" class="btn-danger">Reset</button>
+        </div>
+
+        <div class="data-display mt-4">
+            <div class="data-item">Center X: <span id="centerXDisplay">N/A</span></div>
+            <div class="data-item">Center Y: <span id="centerYDisplay">N/A</span></div>
+            <div class="data-item">Diameter (px): <span id="diameterDisplay">N/A</span></div>
         </div>
     </div>
 
     <script>
-        const video = document.getElementById('videoElement');
-        const canvas = document.getElementById('canvas');
-        const startButton = document.getElementById('startButton');
-        const captureButton = document.getElementById('captureButton');
-        const retakeButton = document.getElementById('retakeButton');
-        const messageBox = document.getElementById('messageBox');
-        let stream = null; // To store the camera stream
+const webcamFeed = document.getElementById('webcamFeed');
+const measurementCanvas = document.getElementById('measurementCanvas');
+const ctx = measurementCanvas.getContext('2d');
 
-        // Function to display messages to the user
-        function showMessage(message, type = 'info') {
-            messageBox.textContent = message;
-            messageBox.classList.remove('hidden', 'bg-red-100', 'text-red-800', 'bg-green-100', 'text-green-800', 'bg-blue-100', 'text-blue-800');
-            if (type === 'error') {
-                messageBox.classList.add('bg-red-100', 'text-red-800');
-            } else if (type === 'success') {
-                messageBox.classList.add('bg-green-100', 'text-green-800');
-            } else { // info
-                messageBox.classList.add('bg-blue-100', 'text-blue-800');
-            }
-            messageBox.style.display = 'block'; // Ensure message box is visible
+const cameraActionBtn = document.getElementById('cameraActionBtn');
+const selectCenterBtn = document.getElementById('selectCenterBtn');
+const measureDiameterBtn = document.getElementById('measureDiameterBtn');
+const saveMeasurementBtn = document.getElementById('saveMeasurementBtn');
+const resetBtn = document.getElementById('resetBtn');
+
+const centerXDisplay = document.getElementById('centerXDisplay');
+const centerYDisplay = document.getElementById('centerYDisplay');
+const diameterDisplay = document.getElementById('diameterDisplay');
+const messageBox = document.getElementById('messageBox');
+
+let stream;
+let capturedImageBlob = null;
+let capturedImageFilename = null;
+let drawingMode = null;
+let centerPoint = null;
+let diameterEndPoint = null;
+let cameraActive = false;
+let capturedImageData = null;
+
+// Function to display messages to the user
+function showMessage(message, type = 'success') {
+    messageBox.textContent = message;
+    messageBox.className = 'message-box';
+    if (type === 'success') {
+        messageBox.classList.add('bg-green-100', 'text-green-800');
+    } else if (type === 'error') {
+        messageBox.classList.add('bg-red-100', 'text-red-800');
+    } else if (type === 'info') {
+        messageBox.classList.add('bg-blue-100', 'text-blue-800');
+    }
+    messageBox.style.display = 'block';
+    setTimeout(() => {
+        messageBox.style.display = 'none';
+    }, 5000);
+}
+
+// Function to resize canvas to match video dimensions
+function resizeCanvas() {
+    if (webcamFeed.videoWidth && webcamFeed.videoHeight) {
+        measurementCanvas.width = webcamFeed.videoWidth;
+        measurementCanvas.height = webcamFeed.videoHeight;
+        
+        // Set canvas display size to match video
+        const rect = webcamFeed.getBoundingClientRect();
+        measurementCanvas.style.width = rect.width + 'px';
+        measurementCanvas.style.height = rect.height + 'px';
+    }
+}
+
+// Initial button state
+cameraActionBtn.disabled = false;
+selectCenterBtn.disabled = true;
+measureDiameterBtn.disabled = true;
+saveMeasurementBtn.disabled = true;
+resetBtn.disabled = false;
+
+// Camera action button logic
+cameraActionBtn.addEventListener('click', async () => {
+    if (!cameraActive) {
+        // Start camera
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    width: { ideal: 640 },
+                    height: { ideal: 480 }
+                } 
+            });
+            webcamFeed.srcObject = stream;
+            
+            webcamFeed.onloadedmetadata = () => {
+                resizeCanvas();
+                cameraActionBtn.textContent = 'Capture Image';
+                cameraActive = true;
+                showMessage("Camera started. Click 'Capture Image' to take a photo.", "info");
+            };
+            
+            // Handle video resize
+            webcamFeed.addEventListener('resize', resizeCanvas);
+            window.addEventListener('resize', resizeCanvas);
+            
+        } catch (err) {
+            console.error("Error accessing camera: ", err);
+            showMessage("Error accessing camera. Please ensure camera access is granted.", "error");
         }
-
-        // Function to hide the message box
-        function hideMessage() {
-            messageBox.style.display = 'none';
+    } else {
+        // Capture image
+        resizeCanvas(); // Ensure canvas is properly sized
+        
+        // Draw the current video frame to canvas
+        ctx.drawImage(webcamFeed, 0, 0, measurementCanvas.width, measurementCanvas.height);
+        
+        // Store the captured image data
+        capturedImageData = ctx.getImageData(0, 0, measurementCanvas.width, measurementCanvas.height);
+        
+        // Stop the camera
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            webcamFeed.srcObject = null;
+            stream = null;
         }
-
-        // Function to start the camera stream
-        async function startCamera() {
-            hideMessage();
-            try {
-                // Define camera constraints with fallback options
-                const constraints = [
-                    // Try rear camera first (ideal for mobile)
-                    { video: { facingMode: "environment" } },
-                    // Fallback to front camera if rear camera fails
-                    { video: { facingMode: "user" } },
-                    // Final fallback to any available camera
-                    { video: true }
-                ];
-
-                let success = false;
-                for (let i = 0; i < constraints.length; i++) {
-                    try {
-                        stream = await navigator.mediaDevices.getUserMedia(constraints[i]);
-                        success = true;
-                        break; // Exit loop on first successful stream
-                    } catch (err) {
-                        console.warn(`Attempt ${i + 1} to get camera failed:`, err);
-                        // Continue to the next constraint if this one fails
+        
+        // Convert canvas to blob and upload
+        measurementCanvas.toBlob(async (blob) => {
+            capturedImageBlob = blob;
+            const reader = new FileReader();
+            reader.onloadend = async () => {
+                try {
+                    const response = await fetch('/upload_image', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ image: reader.result })
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        capturedImageFilename = result.filename;
+                        showMessage("Image captured and saved. Now select the ball's center.", "info");
+                        
+                        // Update button states
+                        cameraActionBtn.textContent = 'Start Camera';
+                        cameraActionBtn.disabled = false;
+                        selectCenterBtn.disabled = false;
+                        measureDiameterBtn.disabled = true;
+                        saveMeasurementBtn.disabled = true;
+                        
+                        cameraActive = false;
+                        
+                        // Redraw the captured image
+                        drawCanvas();
+                        
+                    } else {
+                        showMessage(result.message, 'error');
                     }
+                } catch (error) {
+                    console.error('Error uploading image:', error);
+                    showMessage('Failed to upload image.', 'error');
                 }
+            };
+            reader.readAsDataURL(blob);
+        }, 'image/jpeg');
+    }
+});
 
-                if (!success) {
-                    throw new Error("Could not access any camera with the specified constraints.");
-                }
+// Select Center Mode
+selectCenterBtn.addEventListener('click', () => {
+    if (!capturedImageData) {
+        showMessage("Capture an image first!", "error");
+        return;
+    }
+    drawingMode = 'center';
+    showMessage("Click on the ball's center.", "info");
+});
 
-                video.srcObject = stream;
-                video.style.display = 'block'; // Show video element
-                startButton.style.display = 'none'; // Hide start button
-                captureButton.style.display = 'block'; // Show capture button
-                showMessage('Camera started. Click "Capture Image" to take a photo.', 'info');
+// Measure Diameter Mode
+measureDiameterBtn.addEventListener('click', () => {
+    if (!centerPoint) {
+        showMessage("Please select the ball's center first.", "error");
+        return;
+    }
+    drawingMode = 'diameter';
+    showMessage("Click on the ball's circumference to measure diameter.", "info");
+});
 
-                // Ensure video is playing before allowing capture
-                video.onloadedmetadata = () => {
-                    video.play();
-                };
+// Canvas Click Listener for drawing
+measurementCanvas.addEventListener('click', (e) => {
+    if (!drawingMode || !capturedImageData) return;
 
-            } catch (err) {
-                console.error("Error accessing camera: ", err);
-                video.style.display = 'none'; // Hide video element on error
-                captureButton.style.display = 'none'; // Ensure capture button is hidden on error
-                
-                let errorMessage = '';
-                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                    errorMessage = 'Camera access denied. Please allow camera access in your browser settings and refresh the page.';
-                } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-                    errorMessage = 'No camera found on your device.';
-                } else if (err.name === 'NotReadableError') {
-                    errorMessage = 'Camera is already in use by another application. Please close other camera apps and try again.';
-                } else if (err.name === 'OverconstrainedError') {
-                    errorMessage = 'The requested camera constraints are not supported. Trying with basic camera access.';
-                } else if (err.name === 'NotSecureError' || (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost')) {
-                    errorMessage = 'Camera access requires a secure connection (HTTPS). Please ensure you are accessing the site over HTTPS.';
-                }
-                else {
-                    errorMessage = `Error: ${err.message}. Could not start camera.`;
-                }
-                showMessage(errorMessage, 'error');
-                startButton.style.display = 'block'; // Keep start button visible if camera fails
-            }
+    const rect = measurementCanvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // Scale coordinates to actual canvas resolution
+    const scaleX = measurementCanvas.width / rect.width;
+    const scaleY = measurementCanvas.height / rect.height;
+    const actualX = x * scaleX;
+    const actualY = y * scaleY;
+
+    if (drawingMode === 'center') {
+        centerPoint = { x: actualX, y: actualY };
+        centerXDisplay.textContent = Math.round(actualX);
+        centerYDisplay.textContent = Math.round(actualY);
+        drawCanvas();
+        drawingMode = null;
+        
+        // Update button states
+        measureDiameterBtn.disabled = false;
+        showMessage("Center selected. Now measure the diameter.", "info");
+        
+    } else if (drawingMode === 'diameter') {
+        diameterEndPoint = { x: actualX, y: actualY };
+        if (centerPoint) {
+            const radius = Math.sqrt(
+                Math.pow(diameterEndPoint.x - centerPoint.x, 2) +
+                Math.pow(diameterEndPoint.y - centerPoint.y, 2)
+            );
+            const diameter = radius * 2;
+            diameterDisplay.textContent = Math.round(diameter);
+            drawCanvas();
+            drawingMode = null;
+            
+            // Update button states
+            saveMeasurementBtn.disabled = false;
+            showMessage("Diameter measured. Click 'Save Measurement' to save.", "info");
         }
+    }
+});
 
-        // Function to stop the camera stream
-        function stopCamera() {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-                video.srcObject = null;
-                stream = null; // Clear the stream reference
-            }
+// Draw function to update canvas
+function drawCanvas() {
+    // Clear canvas
+    ctx.clearRect(0, 0, measurementCanvas.width, measurementCanvas.height);
+
+    // Draw captured image if available
+    if (capturedImageData) {
+        ctx.putImageData(capturedImageData, 0, 0);
+        drawMeasurements();
+    }
+}
+
+// Draw measurements (center, diameter circle)
+function drawMeasurements() {
+    if (centerPoint) {
+        // Draw center point
+        ctx.beginPath();
+        ctx.arc(centerPoint.x, centerPoint.y, 5, 0, Math.PI * 2);
+        ctx.fillStyle = 'red';
+        ctx.fill();
+        ctx.closePath();
+
+        // Draw diameter circle if end point is selected
+        if (diameterEndPoint) {
+            const radius = Math.sqrt(
+                Math.pow(diameterEndPoint.x - centerPoint.x, 2) +
+                Math.pow(diameterEndPoint.y - centerPoint.y, 2)
+            );
+            ctx.beginPath();
+            ctx.arc(centerPoint.x, centerPoint.y, radius, 0, Math.PI * 2);
+            ctx.strokeStyle = 'lime';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.closePath();
         }
+    }
+}
 
-        // Function to capture image from video stream
-        async function captureImage() {
-            hideMessage();
-            if (!stream) {
-                showMessage('Camera not started. Please start the camera first.', 'error');
-                return;
-            }
+// Save Measurement
+saveMeasurementBtn.addEventListener('click', async () => {
+    if (!centerPoint || !diameterDisplay.textContent || !capturedImageFilename) {
+        showMessage("Please capture an image, select center, and measure diameter first.", "error");
+        return;
+    }
 
-            // Ensure video is ready before capturing
-            if (video.videoWidth === 0 || video.videoHeight === 0) {
-                showMessage('Camera not ready. Please wait a moment and try again.', 'error');
-                return;
-            }
+    const diameter = parseFloat(diameterDisplay.textContent);
 
-            // Set canvas dimensions to match video stream
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-
-            // Draw the current video frame onto the canvas
-            const context = canvas.getContext('2d');
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            // Get image data as base64 encoded JPEG
-            const imageDataURL = canvas.toDataURL('image/jpeg', 0.9); // Quality 0.9 for JPEG
-
-            // Hide video, show captured image on canvas
-            video.style.display = 'none';
-            canvas.style.display = 'block';
-            captureButton.style.display = 'none';
-            retakeButton.style.display = 'block';
-            showMessage('Image captured. Uploading...', 'info');
-
-            // Stop the camera stream after capture
-            stopCamera();
-
-            // Send the image data to the Flask backend
-            try {
-                const response = await fetch('/upload_image', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ image: imageDataURL }),
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showMessage(`Success: ${result.message}`, 'success');
-                    console.log('Image uploaded successfully:', result.filename);
-                } else {
-                    showMessage(`Error: ${result.message}`, 'error');
-                    console.error('Image upload failed:', result.message);
-                }
-            } catch (error) {
-                showMessage(`Upload failed: ${error.message}. Check server connection.`, 'error');
-                console.error('Error uploading image:', error);
-            }
-        }
-
-        // Function to retake the image
-        function retakeImage() {
-            hideMessage();
-            canvas.style.display = 'none'; // Hide canvas
-            video.style.display = 'none'; // Hide video (will be shown by startCamera)
-            retakeButton.style.display = 'none'; // Hide retake button
-            captureButton.style.display = 'none'; // Hide capture button (will be shown by startCamera)
-            startButton.style.display = 'block'; // Show start button to re-initiate camera
-            showMessage('Click "Start Camera" to take another photo.', 'info');
-        }
-
-        // Event Listeners
-        startButton.addEventListener('click', startCamera);
-        captureButton.addEventListener('click', captureImage);
-        retakeButton.addEventListener('click', retakeImage);
-
-        // Initial state setup
-        window.onload = () => {
-            startButton.style.display = 'block';
-            video.style.display = 'none';
-            canvas.style.display = 'none';
-            captureButton.style.display = 'none';
-            retakeButton.style.display = 'none';
-            showMessage('Click "Start Camera" to begin.', 'info');
-        };
-
-        // Handle page unload to clean up camera stream
-        window.addEventListener('beforeunload', () => {
-            stopCamera();
+    try {
+        const response = await fetch('/save_measurement', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                centerX: Math.round(centerPoint.x),
+                centerY: Math.round(centerPoint.y),
+                diameter: Math.round(diameter),
+                imageFilename: capturedImageFilename
+            })
         });
+        const result = await response.json();
+        if (result.success) {
+            showMessage(result.message);
+            saveMeasurementBtn.disabled = true;
+        } else {
+            showMessage(result.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error saving measurement:', error);
+        showMessage('Failed to save measurement.', 'error');
+    }
+});
+
+// Reset
+resetBtn.addEventListener('click', () => {
+    // Stop camera if active
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+    }
+    
+    // Clear video
+    webcamFeed.srcObject = null;
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, measurementCanvas.width, measurementCanvas.height);
+    
+    // Reset all variables
+    capturedImageBlob = null;
+    capturedImageFilename = null;
+    capturedImageData = null;
+    drawingMode = null;
+    centerPoint = null;
+    diameterEndPoint = null;
+    cameraActive = false;
+    
+    // Reset displays
+    centerXDisplay.textContent = 'N/A';
+    centerYDisplay.textContent = 'N/A';
+    diameterDisplay.textContent = 'N/A';
+    
+    // Reset button states
+    cameraActionBtn.textContent = 'Start Camera';
+    cameraActionBtn.disabled = false;
+    selectCenterBtn.disabled = true;
+    measureDiameterBtn.disabled = true;
+    saveMeasurementBtn.disabled = true;
+    resetBtn.disabled = false;
+    
+    showMessage("Application reset. Click 'Start Camera' to begin.", "info");
+});
+
     </script>
 </body>
 </html>
