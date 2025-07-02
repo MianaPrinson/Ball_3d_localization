@@ -6,7 +6,122 @@
     <title>Ball Measurement App</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-
+    <style>
+        /* Basic styling for the app */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: #333;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+            text-align: center;
+        }
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 640px; /* Max width for video feed */
+            margin: 0 auto 1.5rem;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        }
+        #webcamFeed, #measurementCanvas {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        #measurementCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 10;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .btn-primary, .btn-secondary, .btn-danger {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .btn-primary {
+            background-color: #4f46e5;
+            color: white;
+            border: none;
+        }
+        .btn-primary:hover:not(:disabled) {
+            background-color: #4338ca;
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            background-color: #e0e7ff;
+            color: #4f46e5;
+            border: 1px solid #4f46e5;
+        }
+        .btn-secondary:hover:not(:disabled) {
+            background-color: #c7d2fe;
+            transform: translateY(-2px);
+        }
+        .btn-danger {
+            background-color: #ef4444;
+            color: white;
+            border: none;
+        }
+        .btn-danger:hover:not(:disabled) {
+            background-color: #dc2626;
+            transform: translateY(-2px);
+        }
+        .btn-primary:disabled, .btn-secondary:disabled, .btn-danger:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .data-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            background-color: #f8fafc;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        .data-item {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #475569;
+            text-align: left;
+        }
+        .data-item span {
+            font-weight: 700;
+            color: #1e293b;
+        }
+        .message-box {
+            padding: 0.75rem 1.25rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: none; /* Hidden by default */
+        }
+    </style>
 </head>
 
 <body>
@@ -25,13 +140,17 @@
             <button id="selectCenterBtn" class="btn-secondary" disabled>Select Center</button>
             <button id="measureDiameterBtn" class="btn-secondary" disabled>Measure Diameter</button>
             <button id="saveMeasurementBtn" class="btn-primary" disabled>Save Measurement</button>
+            <button id="localizeBallBtn" class="btn-primary" disabled>Localize Ball (3D)</button>
             <button id="resetBtn" class="btn-danger">Reset</button>
         </div>
 
         <div class="data-display mt-4">
-            <div class="data-item">Center X: <span id="centerXDisplay">N/A</span></div>
-            <div class="data-item">Center Y: <span id="centerYDisplay">N/A</span></div>
+            <div class="data-item">Center X (px): <span id="centerXDisplay">N/A</span></div>
+            <div class="data-item">Center Y (px): <span id="centerYDisplay">N/A</span></div>
             <div class="data-item">Diameter (px): <span id="diameterDisplay">N/A</span></div>
+            <div class="data-item">Ball X (cm): <span id="ballXDisplay">N/A</span></div>
+            <div class="data-item">Ball Y (cm): <span id="ballYDisplay">N/A</span></div>
+            <div class="data-item">Ball Z (cm): <span id="ballZDisplay">N/A</span></div>
         </div>
     </div>
 
@@ -44,11 +163,15 @@ const cameraActionBtn = document.getElementById('cameraActionBtn');
 const selectCenterBtn = document.getElementById('selectCenterBtn');
 const measureDiameterBtn = document.getElementById('measureDiameterBtn');
 const saveMeasurementBtn = document.getElementById('saveMeasurementBtn');
+const localizeBallBtn = document.getElementById('localizeBallBtn');
 const resetBtn = document.getElementById('resetBtn');
 
 const centerXDisplay = document.getElementById('centerXDisplay');
 const centerYDisplay = document.getElementById('centerYDisplay');
 const diameterDisplay = document.getElementById('diameterDisplay');
+const ballXDisplay = document.getElementById('ballXDisplay');
+const ballYDisplay = document.getElementById('ballYDisplay');
+const ballZDisplay = document.getElementById('ballZDisplay');
 const messageBox = document.getElementById('messageBox');
 
 let stream;
@@ -95,6 +218,7 @@ cameraActionBtn.disabled = false;
 selectCenterBtn.disabled = true;
 measureDiameterBtn.disabled = true;
 saveMeasurementBtn.disabled = true;
+localizeBallBtn.disabled = true;
 resetBtn.disabled = false;
 
 // Camera action button logic
@@ -117,7 +241,6 @@ cameraActionBtn.addEventListener('click', async () => {
                 showMessage("Camera started. Click 'Capture Image' to take a photo.", "info");
             };
             
-            // Handle video resize
             webcamFeed.addEventListener('resize', resizeCanvas);
             window.addEventListener('resize', resizeCanvas);
             
@@ -127,22 +250,18 @@ cameraActionBtn.addEventListener('click', async () => {
         }
     } else {
         // Capture image
-        resizeCanvas(); // Ensure canvas is properly sized
+        resizeCanvas();
         
-        // Draw the current video frame to canvas
         ctx.drawImage(webcamFeed, 0, 0, measurementCanvas.width, measurementCanvas.height);
         
-        // Store the captured image data
         capturedImageData = ctx.getImageData(0, 0, measurementCanvas.width, measurementCanvas.height);
         
-        // Stop the camera
         if (stream) {
             stream.getTracks().forEach(track => track.stop());
             webcamFeed.srcObject = null;
             stream = null;
         }
         
-        // Convert canvas to blob and upload
         measurementCanvas.toBlob(async (blob) => {
             capturedImageBlob = blob;
             const reader = new FileReader();
@@ -158,16 +277,15 @@ cameraActionBtn.addEventListener('click', async () => {
                         capturedImageFilename = result.filename;
                         showMessage("Image captured and saved. Now select the ball's center.", "info");
                         
-                        // Update button states
                         cameraActionBtn.textContent = 'Start Camera';
                         cameraActionBtn.disabled = false;
                         selectCenterBtn.disabled = false;
                         measureDiameterBtn.disabled = true;
                         saveMeasurementBtn.disabled = true;
+                        localizeBallBtn.disabled = true;
                         
                         cameraActive = false;
                         
-                        // Redraw the captured image
                         drawCanvas();
                         
                     } else {
@@ -211,7 +329,6 @@ measurementCanvas.addEventListener('click', (e) => {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    // Scale coordinates to actual canvas resolution
     const scaleX = measurementCanvas.width / rect.width;
     const scaleY = measurementCanvas.height / rect.height;
     const actualX = x * scaleX;
@@ -224,7 +341,6 @@ measurementCanvas.addEventListener('click', (e) => {
         drawCanvas();
         drawingMode = null;
         
-        // Update button states
         measureDiameterBtn.disabled = false;
         showMessage("Center selected. Now measure the diameter.", "info");
         
@@ -240,19 +356,17 @@ measurementCanvas.addEventListener('click', (e) => {
             drawCanvas();
             drawingMode = null;
             
-            // Update button states
             saveMeasurementBtn.disabled = false;
-            showMessage("Diameter measured. Click 'Save Measurement' to save.", "info");
+            localizeBallBtn.disabled = false;
+            showMessage("Diameter measured. Click 'Save Measurement' or 'Localize Ball (3D)'.", "info");
         }
     }
 });
 
 // Draw function to update canvas
 function drawCanvas() {
-    // Clear canvas
     ctx.clearRect(0, 0, measurementCanvas.width, measurementCanvas.height);
 
-    // Draw captured image if available
     if (capturedImageData) {
         ctx.putImageData(capturedImageData, 0, 0);
         drawMeasurements();
@@ -262,14 +376,12 @@ function drawCanvas() {
 // Draw measurements (center, diameter circle)
 function drawMeasurements() {
     if (centerPoint) {
-        // Draw center point
         ctx.beginPath();
         ctx.arc(centerPoint.x, centerPoint.y, 5, 0, Math.PI * 2);
         ctx.fillStyle = 'red';
         ctx.fill();
         ctx.closePath();
 
-        // Draw diameter circle if end point is selected
         if (diameterEndPoint) {
             const radius = Math.sqrt(
                 Math.pow(diameterEndPoint.x - centerPoint.x, 2) +
@@ -287,12 +399,15 @@ function drawMeasurements() {
 
 // Save Measurement
 saveMeasurementBtn.addEventListener('click', async () => {
-    if (!centerPoint || !diameterDisplay.textContent || !capturedImageFilename) {
+    if (!centerPoint || diameterDisplay.textContent === 'N/A' || !capturedImageFilename) {
         showMessage("Please capture an image, select center, and measure diameter first.", "error");
         return;
     }
 
     const diameter = parseFloat(diameterDisplay.textContent);
+    const ballX = ballXDisplay.textContent === 'N/A' ? null : parseFloat(ballXDisplay.textContent);
+    const ballY = ballYDisplay.textContent === 'N/A' ? null : parseFloat(ballYDisplay.textContent);
+    const ballZ = ballZDisplay.textContent === 'N/A' ? null : parseFloat(ballZDisplay.textContent);
 
     try {
         const response = await fetch('/save_measurement', {
@@ -302,7 +417,10 @@ saveMeasurementBtn.addEventListener('click', async () => {
                 centerX: Math.round(centerPoint.x),
                 centerY: Math.round(centerPoint.y),
                 diameter: Math.round(diameter),
-                imageFilename: capturedImageFilename
+                imageFilename: capturedImageFilename,
+                ballX: ballX, // Include 3D coordinates
+                ballY: ballY,
+                ballZ: ballZ
             })
         });
         const result = await response.json();
@@ -318,21 +436,62 @@ saveMeasurementBtn.addEventListener('click', async () => {
     }
 });
 
+// Localize Ball (3D) button logic
+localizeBallBtn.addEventListener('click', async () => {
+    if (!centerPoint || diameterDisplay.textContent === 'N/A') {
+        showMessage("Please select ball center and measure diameter first.", "error");
+        return;
+    }
+
+    const centerX = Math.round(centerPoint.x);
+    const centerY = Math.round(centerPoint.y);
+    const diameter = parseFloat(diameterDisplay.textContent);
+
+    try {
+        showMessage("Localizing ball in 3D...", "info");
+        const response = await fetch('/ball_localization', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                centerX: centerX,
+                centerY: centerY,
+                diameter: diameter
+            })
+        });
+        const result = await response.json();
+
+        if (result.success) {
+            const { x, y, z } = result.ball_position_camera_coords;
+            ballXDisplay.textContent = x.toFixed(2);
+            ballYDisplay.textContent = y.toFixed(2);
+            ballZDisplay.textContent = z.toFixed(2);
+            showMessage("Ball localized successfully!", "success");
+        } else {
+            showMessage(result.message, 'error');
+            ballXDisplay.textContent = 'N/A';
+            ballYDisplay.textContent = 'N/A';
+            ballZDisplay.textContent = 'N/A';
+        }
+    } catch (error) {
+        console.error('Error localizing ball:', error);
+        showMessage('Failed to localize ball in 3D.', 'error');
+        ballXDisplay.textContent = 'N/A';
+        ballYDisplay.textContent = 'N/A';
+        ballZDisplay.textContent = 'N/A';
+    }
+});
+
 // Reset
 resetBtn.addEventListener('click', () => {
-    // Stop camera if active
     if (stream) {
         stream.getTracks().forEach(track => track.stop());
         stream = null;
     }
     
-    // Clear video
     webcamFeed.srcObject = null;
     
-    // Clear canvas
     ctx.clearRect(0, 0, measurementCanvas.width, measurementCanvas.height);
     
-    // Reset all variables
     capturedImageBlob = null;
     capturedImageFilename = null;
     capturedImageData = null;
@@ -341,17 +500,19 @@ resetBtn.addEventListener('click', () => {
     diameterEndPoint = null;
     cameraActive = false;
     
-    // Reset displays
     centerXDisplay.textContent = 'N/A';
     centerYDisplay.textContent = 'N/A';
     diameterDisplay.textContent = 'N/A';
+    ballXDisplay.textContent = 'N/A';
+    ballYDisplay.textContent = 'N/A';
+    ballZDisplay.textContent = 'N/A';
     
-    // Reset button states
     cameraActionBtn.textContent = 'Start Camera';
     cameraActionBtn.disabled = false;
     selectCenterBtn.disabled = true;
     measureDiameterBtn.disabled = true;
     saveMeasurementBtn.disabled = true;
+    localizeBallBtn.disabled = true;
     resetBtn.disabled = false;
     
     showMessage("Application reset. Click 'Start Camera' to begin.", "info");
