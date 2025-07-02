@@ -6,122 +6,6 @@
     <title>Ball Measurement App</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <style>
-        /* Basic styling for the app */
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f0f4f8;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            color: #333;
-        }
-        .container {
-            background-color: #ffffff;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 800px;
-            text-align: center;
-        }
-        .video-container {
-            position: relative;
-            width: 100%;
-            max-width: 640px; /* Max width for video feed */
-            margin: 0 auto 1.5rem;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-        }
-        #webcamFeed, #measurementCanvas {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-        #measurementCanvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 10;
-        }
-        .controls {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        .btn-primary, .btn-secondary, .btn-danger {
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease-in-out;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-        .btn-primary {
-            background-color: #4f46e5;
-            color: white;
-            border: none;
-        }
-        .btn-primary:hover:not(:disabled) {
-            background-color: #4338ca;
-            transform: translateY(-2px);
-        }
-        .btn-secondary {
-            background-color: #e0e7ff;
-            color: #4f46e5;
-            border: 1px solid #4f46e5;
-        }
-        .btn-secondary:hover:not(:disabled) {
-            background-color: #c7d2fe;
-            transform: translateY(-2px);
-        }
-        .btn-danger {
-            background-color: #ef4444;
-            color: white;
-            border: none;
-        }
-        .btn-danger:hover:not(:disabled) {
-            background-color: #dc2626;
-            transform: translateY(-2px);
-        }
-        .btn-primary:disabled, .btn-secondary:disabled, .btn-danger:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            box-shadow: none;
-        }
-        .data-display {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
-            background-color: #f8fafc;
-            padding: 1.5rem;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-        }
-        .data-item {
-            font-size: 1rem;
-            font-weight: 500;
-            color: #475569;
-            text-align: left;
-        }
-        .data-item span {
-            font-weight: 700;
-            color: #1e293b;
-        }
-        .message-box {
-            padding: 0.75rem 1.25rem;
-            margin-bottom: 1rem;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            display: none; /* Hidden by default */
-        }
-    </style>
 </head>
 
 <body>
@@ -228,7 +112,7 @@ cameraActionBtn.addEventListener('click', async () => {
         try {
     stream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
-        facingMode: { exact: "environment" }, // Request back camera
+        facingMode: { exact: "environment" },
         width: { ideal: 640 },
         height: { ideal: 480 }
     } 

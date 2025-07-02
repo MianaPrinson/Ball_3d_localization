@@ -1,104 +1,153 @@
+/* Basic styling for the app */
 body {
-            font-family: "Inter", sans-serif;
-            background-color: #f0f4f8;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
-            padding: 20px;
-        }
-        .container {
-            background-color: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            padding: 30px;
-            max-width: 900px;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        .video-container, .canvas-container {
-            position: relative;
-            width: 100%;
-            max-width: 640px;
-            margin: 0 auto;
-            border-radius: 8px;
-            overflow: hidden;
-            background-color: #000;
-        }
-        video, canvas {
-            display: block;
-            width: 100%;
-            height: auto;
-        }
-        canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            pointer-events: auto;
-        }
-        .controls, .data-display {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
-        }
-        button {
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease-in-out;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none !important;
-        }
-        button:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-        }
-        .btn-primary {
-            background-color: #4f46e5;
-            color: white;
-            border: none;
-        }
-        .btn-primary:hover:not(:disabled) {
-            background-color: #4338ca;
-        }
-        .btn-secondary {
-            background-color: #e0e7ff;
-            color: #4f46e5;
-            border: 1px solid #4f46e5;
-        }
-        .btn-secondary:hover:not(:disabled) {
-            background-color: #c7d2fe;
-        }
-        .btn-danger {
-            background-color: #ef4444;
-            color: white;
-            border: none;
-        }
-        .btn-danger:hover:not(:disabled) {
-            background-color: #dc2626;
-        }
-        .data-item {
-            background-color: #f3f4f6;
-            padding: 8px 15px;
-            border-radius: 6px;
-            font-size: 0.9em;
-            color: #374151;
-        }
-        .message-box {
-            background-color: #d1fae5;
-            color: #065f46;
-            padding: 10px 15px;
-            border-radius: 8px;
-            margin-top: 15px;
-            text-align: center;
-            font-weight: 500;
-            display: none;
-        }
+    font-family: "Inter", sans-serif;
+    background-color: #f0f4f8;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* From style.css, better for overall layout */
+    min-height: 100vh;
+    padding: 20px; /* From style.css */
+    margin: 0; /* Ensure no default margin */
+    color: #333;
+}
+
+.container {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* From style.css, slightly deeper shadow */
+    padding: 30px; /* From style.css, more generous padding */
+    max-width: 900px; /* From style.css, slightly wider container */
+    width: 100%;
+    display: flex; /* From style.css */
+    flex-direction: column; /* From style.css */
+    gap: 20px; /* From style.css, consistent spacing */
+    text-align: center; /* Keep text centered */
+}
+
+.video-container {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto; /* Keep centered */
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08); /* From inline, good shadow */
+    background-color: #000; /* From style.css, ensures black background for video */
+}
+
+/* Added .canvas-container from style.css, assuming it might be used elsewhere */
+.video-container, .canvas-container {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #000;
+}
+
+video, canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 10;
+    pointer-events: auto; /* From style.css, ensures canvas is interactive */
+}
+
+.controls, .data-display {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px; /* From style.css, more precise gap */
+    justify-content: center;
+}
+
+/* General button styling (from style.css) */
+button {
+    padding: 10px 20px; /* From style.css */
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+button:disabled {
+    opacity: 0.5; /* From style.css, more distinct disabled state */
+    cursor: not-allowed;
+    transform: none !important; /* Ensure no hover effect on disabled */
+    box-shadow: none; /* Remove shadow on disabled */
+}
+
+button:hover:not(:disabled) {
+    transform: translateY(-2px); /* From style.css, nice lift effect */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* From style.css, deeper shadow on hover */
+}
+
+/* Specific button color styles (combined from both) */
+.btn-primary {
+    background-color: #4f46e5;
+    color: white;
+    border: none;
+}
+.btn-primary:hover:not(:disabled) {
+    background-color: #4338ca;
+}
+
+.btn-secondary {
+    background-color: #e0e7ff;
+    color: #4f46e5;
+    border: 1px solid #4f46e5;
+}
+.btn-secondary:hover:not(:disabled) {
+    background-color: #c7d2fe;
+}
+
+.btn-danger {
+    background-color: #ef4444;
+    color: white;
+    border: none;
+}
+.btn-danger:hover:not(:disabled) {
+    background-color: #dc2626;
+}
+
+.data-item {
+    background-color: #f3f4f6; /* From style.css, lighter background */
+    padding: 8px 15px; /* From style.css, more compact padding */
+    border-radius: 6px; /* From style.css, slightly smaller radius */
+    font-size: 0.9em; /* From style.css, slightly smaller font */
+    color: #374151; /* From style.css, darker text */
+    text-align: left; /* Keep text aligned left */
+}
+
+.data-item span {
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.message-box {
+    background-color: #d1fae5; /* From style.css, distinct success color */
+    color: #065f46; /* From style.css, distinct success text color */
+    padding: 10px 15px; /* From style.css */
+    border-radius: 8px;
+    margin-bottom: 1rem; /* Keep margin from inline */
+    margin-top: 15px; /* From style.css */
+    text-align: center; /* From style.css */
+    font-weight: 500; /* From style.css */
+    display: none; /* Hidden by default */
+}
+/* Styles for different message types */
+.message-box.bg-red-100 {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+.message-box.bg-blue-100 {
+    background-color: #e0f2fe;
+    color: #0c4a6e;
+}
