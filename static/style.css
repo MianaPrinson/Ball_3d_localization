@@ -24,17 +24,6 @@ body {
     text-align: center; /* Keep text centered */
 }
 
-.video-container {
-    position: relative;
-    width: 100%;
-    max-width: 640px;
-    margin: 0 auto; /* Keep centered */
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08); /* From inline, good shadow */
-    background-color: #000; /* From style.css, ensures black background for video */
-}
-
 /* Added .canvas-container from style.css, assuming it might be used elsewhere */
 .video-container, .canvas-container {
     position: relative;
@@ -43,6 +32,7 @@ body {
     margin: 0 auto;
     border-radius: 8px;
     overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
     background-color: #000;
 }
 
