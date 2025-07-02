@@ -101,11 +101,6 @@ def localization():
         ball_y_camera = scaled_bc[1, 0]
         ball_z_camera = scaled_bc[2, 0]
 
-        collection.insert_one({
-        "pixel_coordinates": [center_x, center_y],
-        "diameter": diameter,
-        "ball_coordinates": [ball_x_camera, ball_y_camera, ball_z_camera]
-})
 
         return jsonify({
             'success': True,
