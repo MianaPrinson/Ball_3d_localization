@@ -10,6 +10,7 @@
 </head>
 
 <body>
+
     <div class="container">
         <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Ball Localization App</h1>
 
@@ -40,6 +41,7 @@
     </div>
 
     <script>
+
 const webcamFeed = document.getElementById('webcamFeed');
 const measurementCanvas = document.getElementById('measurementCanvas');
 const ctx = measurementCanvas.getContext('2d');
@@ -114,8 +116,8 @@ cameraActionBtn.addEventListener('click', async () => {
     stream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
         facingMode: { exact: "environment" },
-        width: { ideal: 640 },
-        height: { ideal: 480 }
+        width: { ideal: 3000 },
+        height: { ideal: 4000 }
     } 
 });
             webcamFeed.srcObject = stream;
