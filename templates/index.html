@@ -128,18 +128,23 @@ cameraActionBtn.addEventListener('click', async () => {
             });
             webcamFeed.srcObject = stream;
             
-            webcamFeed.onloadedmetadata = () => {
-                // Set canvas internal resolution to match video
-                measurementCanvas.width = webcamFeed.videoWidth;
-                measurementCanvas.height = webcamFeed.videoHeight;
-                
-                // CSS will handle the display sizing automatically due to width: 100% and height: auto
-                // No need to set explicit CSS dimensions as the container constrains the size
-                
-                cameraActionBtn.textContent = 'Capture Image';
-                cameraActive = true;
-                showMessage("Camera started. Click 'Capture Image' to take a photo.", "info");
-            };
+webcamFeed.onloadedmetadata = () => {
+    measurementCanvas.width = webcamFeed.videoWidth;
+    measurementCanvas.height = webcamFeed.videoHeight;
+
+    // Set container size to match video aspect ratio
+    const container = document.querySelector('.video-container');
+    const aspectRatio = webcamFeed.videoWidth / webcamFeed.videoHeight;
+    const maxWidth = 600; // or any max width you want
+    const width = Math.min(maxWidth, window.innerWidth * 0.95);
+    const height = width / aspectRatio;
+    container.style.width = width + 'px';
+    container.style.height = height + 'px';
+
+    cameraActionBtn.textContent = 'Capture Image';
+    cameraActive = true;
+    showMessage("Camera started. Click 'Capture Image' to take a photo.", "info");
+};
             
         } catch (err) {
             console.error("Error accessing camera: ", err);
