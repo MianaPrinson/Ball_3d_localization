@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ball Measurement App</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     
 </head>
@@ -103,10 +102,10 @@ cameraActionBtn.addEventListener('click', async () => {
             stream = await navigator.mediaDevices.getUserMedia({
                 video: {
                     facingMode: { exact: "environment" },
-                    width: { ideal: 1920 }, // Try for Full HD video
+                    width: { ideal: 1920 }, 
                     height: { ideal: 1080 }
                 },
-                audio: false // No audio needed for still capture
+                audio: false 
             });
             webcamFeed.srcObject = stream;
             
@@ -126,7 +125,6 @@ cameraActionBtn.addEventListener('click', async () => {
         }
     } else {
         // Capture image
-        //resizeCanvas();
         
         ctx.drawImage(webcamFeed, 0, 0, measurementCanvas.width, measurementCanvas.height);
         
