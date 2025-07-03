@@ -4,12 +4,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ball Measurement App</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Additional styles specific to this page */
+        #measurementCanvas {
+            cursor: crosshair;
+        }
+        
+        .data-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            background-color: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .data-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
 </head>
 
 <body>
-
     <div class="container">
         <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Ball Localization App</h1>
 
@@ -29,7 +49,7 @@
             <button id="resetBtn" class="btn-danger">Reset</button>
         </div>
 
-        <div class="data-display mt-4">
+        <div class="data-display">
             <div class="data-item">Center X (px): <span id="centerXDisplay">N/A</span></div>
             <div class="data-item">Center Y (px): <span id="centerYDisplay">N/A</span></div>
             <div class="data-item">Diameter (px): <span id="diameterDisplay">N/A</span></div>
@@ -40,7 +60,6 @@
     </div>
 
     <script>
-
 const webcamFeed = document.getElementById('webcamFeed');
 const measurementCanvas = document.getElementById('measurementCanvas');
 const ctx = measurementCanvas.getContext('2d');
@@ -109,15 +128,18 @@ cameraActionBtn.addEventListener('click', async () => {
             });
             webcamFeed.srcObject = stream;
             
-    webcamFeed.onloadedmetadata = () => {
-        measurementCanvas.width = webcamFeed.videoWidth;
-        measurementCanvas.height = webcamFeed.videoHeight;
-        measurementCanvas.style.width = webcamFeed.style.width = webcamFeed.videoWidth + 'px';
-        measurementCanvas.style.height = webcamFeed.style.height = webcamFeed.videoHeight + 'px';
-        cameraActionBtn.textContent = 'Capture Image';
-        cameraActive = true;
-        showMessage("Camera started. Click 'Capture Image' to take a photo.", "info");
-};
+            webcamFeed.onloadedmetadata = () => {
+                // Set canvas internal resolution to match video
+                measurementCanvas.width = webcamFeed.videoWidth;
+                measurementCanvas.height = webcamFeed.videoHeight;
+                
+                // CSS will handle the display sizing automatically due to width: 100% and height: auto
+                // No need to set explicit CSS dimensions as the container constrains the size
+                
+                cameraActionBtn.textContent = 'Capture Image';
+                cameraActive = true;
+                showMessage("Camera started. Click 'Capture Image' to take a photo.", "info");
+            };
             
         } catch (err) {
             console.error("Error accessing camera: ", err);
@@ -125,9 +147,7 @@ cameraActionBtn.addEventListener('click', async () => {
         }
     } else {
         // Capture image
-        
         ctx.drawImage(webcamFeed, 0, 0, measurementCanvas.width, measurementCanvas.height);
-        
         capturedImageData = ctx.getImageData(0, 0, measurementCanvas.width, measurementCanvas.height);
         
         if (stream) {
@@ -159,7 +179,6 @@ cameraActionBtn.addEventListener('click', async () => {
                         localizeBallBtn.disabled = true;
                         
                         cameraActive = false;
-                        
                         drawCanvas();
                         
                     } else {
@@ -292,7 +311,7 @@ saveMeasurementBtn.addEventListener('click', async () => {
                 centerY: Math.round(centerPoint.y),
                 diameter: Math.round(diameter),
                 imageFilename: capturedImageFilename,
-                ballX: ballX, // Include 3D coordinates
+                ballX: ballX,
                 ballY: ballY,
                 ballZ: ballZ
             })
@@ -363,7 +382,6 @@ resetBtn.addEventListener('click', () => {
     }
     
     webcamFeed.srcObject = null;
-    
     ctx.clearRect(0, 0, measurementCanvas.width, measurementCanvas.height);
     
     capturedImageBlob = null;
@@ -391,7 +409,6 @@ resetBtn.addEventListener('click', () => {
     
     showMessage("Application reset. Click 'Start Camera' to begin.", "info");
 });
-
     </script>
 </body>
 </html>
