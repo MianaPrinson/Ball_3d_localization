@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ball Measurement App</title>
+    <title>Ball Localization App</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
@@ -11,7 +11,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1><i class="fas fa-camera"></i> Ball Measurement App</h1>
+            <h1><i class="fas fa-camera"></i> Ball Localization App</h1>
             <p>Capture, measure, and localize balls with precision</p>
         </div>
 
@@ -142,6 +142,16 @@
         let capturedImageData = null;
         let currentStep = 1;
 
+        // Helper to convert Blob to base64
+  function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
+}
+
         // Function to display messages to the user
         function showMessage(message, type = 'success') {
             messageBox.textContent = message;
@@ -183,8 +193,6 @@
     if (!cameraActive) {
         // --- START CAMERA ---
         try {
-            // Request a reasonable *video* stream resolution using 'ideal'
-            // This is for the live feed display, not the final photo resolution
             stream = await navigator.mediaDevices.getUserMedia({
                 video: {
                     facingMode: { exact: "environment" }, 
@@ -265,23 +273,22 @@
             img.onload = () => {
                 measurementCanvas.width = img.naturalWidth;
                 measurementCanvas.height = img.naturalHeight;
-                ctx.drawImage(img, 0, 0); // Draw the high-res image to canvas
-                // Also store ImageData for other operations (e.g., pixel access)
+                ctx.drawImage(img, 0, 0);
                 capturedImageData = ctx.getImageData(0, 0, measurementCanvas.width, measurementCanvas.height);
+                measurementCanvas.style.display = 'block'; // Ensure canvas is visible
             };
             img.src = URL.createObjectURL(photoBlob); // Create a temporary URL for the blob
 
-            // --- Upload the high-resolution image using FormData ---
-            const formData = new FormData();
-            formData.append('image', photoBlob, 'captured_image.jpeg'); // 'image' is the field name your server expects
+            // --- Upload the high-resolution image as base64 in JSON ---
+                const base64Image = await blobToBase64(photoBlob);
 
-            const response = await fetch('/upload_image', {
-                method: 'POST',
-                body: formData // No 'Content-Type' header needed; browser sets it for FormData
-            });
+                const response = await fetch('/upload_image', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: base64Image })
+                });
 
-            const result = await response.json(); // Assuming your server returns JSON success/filename
-
+                const result = await response.json();
             if (result.success) {
                 capturedImageFilename = result.filename;
                 showMessage("Image captured and saved. Now select the ball's center.", "success");
