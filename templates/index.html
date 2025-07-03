@@ -187,11 +187,11 @@
             // This is for the live feed display, not the final photo resolution
             stream = await navigator.mediaDevices.getUserMedia({
                 video: {
-                    facingMode: { exact: "environment" }, // Rear camera
-                    width: { ideal: 1920 }, // Try for Full HD video
+                    facingMode: { exact: "environment" }, 
+                    width: { ideal: 1920 }, 
                     height: { ideal: 1080 }
                 },
-                audio: false // No audio needed
+                audio: false 
             });
 
             webcamFeed.srcObject = stream;
