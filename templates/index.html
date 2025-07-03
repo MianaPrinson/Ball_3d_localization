@@ -87,19 +87,6 @@ function showMessage(message, type = 'success') {
     }, 5000);
 }
 
-// Function to resize canvas to match video dimensions
-function resizeCanvas() {
-    if (webcamFeed.videoWidth && webcamFeed.videoHeight) {
-        measurementCanvas.width = webcamFeed.videoWidth;
-        measurementCanvas.height = webcamFeed.videoHeight;
-        
-        // Set canvas display size to match video
-        const rect = webcamFeed.getBoundingClientRect();
-        measurementCanvas.style.width = rect.width + 'px';
-        measurementCanvas.style.height = rect.height + 'px';
-    }
-}
-
 // Initial button state
 cameraActionBtn.disabled = false;
 selectCenterBtn.disabled = true;
