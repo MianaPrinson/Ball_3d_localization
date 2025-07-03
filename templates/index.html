@@ -123,15 +123,15 @@ cameraActionBtn.addEventListener('click', async () => {
             });
             webcamFeed.srcObject = stream;
             
-            webcamFeed.onloadedmetadata = () => {
-                resizeCanvas();
-                cameraActionBtn.textContent = 'Capture Image';
-                cameraActive = true;
-                showMessage("Camera started. Click 'Capture Image' to take a photo.", "info");
-            };
-            
-            webcamFeed.addEventListener('resize', resizeCanvas);
-            window.addEventListener('resize', resizeCanvas);
+    webcamFeed.onloadedmetadata = () => {
+        measurementCanvas.width = webcamFeed.videoWidth;
+        measurementCanvas.height = webcamFeed.videoHeight;
+        measurementCanvas.style.width = webcamFeed.style.width = webcamFeed.videoWidth + 'px';
+        measurementCanvas.style.height = webcamFeed.style.height = webcamFeed.videoHeight + 'px';
+        cameraActionBtn.textContent = 'Capture Image';
+        cameraActive = true;
+        showMessage("Camera started. Click 'Capture Image' to take a photo.", "info");
+};
             
         } catch (err) {
             console.error("Error accessing camera: ", err);
