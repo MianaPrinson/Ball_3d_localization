@@ -1,139 +1,372 @@
-/* Basic styling for the app */
-body {
-    font-family: "Inter", sans-serif;
-    background-color: #f0f4f8;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start; /* From style.css, better for overall layout */
-    min-height: 100vh;
-    padding: 20px; /* From style.css */
-    margin: 0; /* Ensure no default margin */
-    color: #333;
-}
+ * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-.container {
-    background-color: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* From style.css, slightly deeper shadow */
-    padding: 30px; /* From style.css, more generous padding */
-    max-width: 900px; /* From style.css, slightly wider container */
-    width: 100%;
-    display: flex; /* From style.css */
-    flex-direction: column; /* From style.css */
-    gap: 20px; /* From style.css, consistent spacing */
-    text-align: center; /* Keep text centered */
-}
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
 
-/* Added .canvas-container from style.css, assuming it might be used elsewhere */
-.video-container {
-    position: relative;
-    display: inline-block;
-    background: #000;
-    overflow: hidden;
-}
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
 
-video, canvas {
-    display: block;
-    width: 100%;
-    height: auto;
-}
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
 
-canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 10;
-    pointer-events: auto; 
-}
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: float 6s ease-in-out infinite;
+        }
 
-.controls, .data-display {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px; /* From style.css, more precise gap */
-    justify-content: center;
-}
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
 
-/* General button styling (from style.css) */
-button {
-    padding: 10px 20px; /* From style.css */
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease-in-out;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
 
-button:disabled {
-    opacity: 0.5; /* From style.css, more distinct disabled state */
-    cursor: not-allowed;
-    transform: none !important; /* Ensure no hover effect on disabled */
-    box-shadow: none; /* Remove shadow on disabled */
-}
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
 
-button:hover:not(:disabled) {
-    transform: translateY(-2px); /* From style.css, nice lift effect */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* From style.css, deeper shadow on hover */
-}
+        .main-content {
+            padding: 40px;
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 40px;
+            align-items: start;
+        }
 
-/* Specific button color styles (combined from both) */
-.btn-primary {
-    background-color: #4f46e5;
-    color: white;
-    border: none;
-}
-.btn-primary:hover:not(:disabled) {
-    background-color: #4338ca;
-}
+        .video-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
 
-.btn-secondary {
-    background-color: #e0e7ff;
-    color: #4f46e5;
-    border: 1px solid #4f46e5;
-}
-.btn-secondary:hover:not(:disabled) {
-    background-color: #c7d2fe;
-}
+        .video-container {
+            position: relative;
+            background: #f8fafc;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 30px;
+            border: 2px solid #e2e8f0;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-.btn-danger {
-    background-color: #ef4444;
-    color: white;
-    border: none;
-}
-.btn-danger:hover:not(:disabled) {
-    background-color: #dc2626;
-}
+        .video-container.active {
+            border-color: #4f46e5;
+            box-shadow: 0 0 20px rgba(79, 70, 229, 0.2);
+        }
 
-.data-item {
-    background-color: #f3f4f6; /* From style.css, lighter background */
-    padding: 8px 15px; /* From style.css, more compact padding */
-    border-radius: 6px; /* From style.css, slightly smaller radius */
-    font-size: 0.9em; /* From style.css, slightly smaller font */
-    color: #374151; /* From style.css, darker text */
-    text-align: left; /* Keep text aligned left */
-}
+        .video-placeholder {
+            color: #64748b;
+            font-size: 1.1rem;
+            text-align: center;
+            padding: 40px;
+        }
 
-.data-item span {
-    font-weight: 700;
-    color: #1e293b;
-}
+        .video-placeholder i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            display: block;
+            color: #94a3b8;
+        }
 
-.message-box {
-    background-color: #d1fae5; /* From style.css, distinct success color */
-    color: #065f46; /* From style.css, distinct success text color */
-    padding: 10px 15px; /* From style.css */
-    border-radius: 8px;
-    margin-bottom: 1rem; /* Keep margin from inline */
-    margin-top: 15px; /* From style.css */
-    text-align: center; /* From style.css */
-    font-weight: 500; /* From style.css */
-    display: none; /* Hidden by default */
-}
-/* Styles for different message types */
-.message-box.bg-red-100 {
-    background-color: #fee2e2;
-    color: #991b1b;
-}
-.message-box.bg-blue-100 {
-    background-color: #e0f2fe;
-    color: #0c4a6e;
-}
+        #webcamFeed, #measurementCanvas {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 8px;
+        }
+
+        #measurementCanvas {
+            cursor: crosshair;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .controls-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            height: fit-content;
+        }
+
+        .controls-section h3 {
+            color: #1e293b;
+            margin-bottom: 25px;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 12px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn:not(:disabled):hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .data-display {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 25px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .data-display h4 {
+            color: #1e293b;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .data-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .data-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .data-label {
+            font-weight: 500;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .data-value {
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 1.1rem;
+        }
+
+        .data-value.has-value {
+            color: #059669;
+        }
+
+        .message-box {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 12px;
+            font-weight: 500;
+            z-index: 1000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            max-width: 400px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .message-box.show {
+            transform: translateX(0);
+        }
+
+        .message-box.success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .message-box.error {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .message-box.info {
+            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+            color: white;
+        }
+
+        .status-indicator {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ef4444;
+            transition: all 0.3s ease;
+        }
+
+        .status-indicator.active {
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 12px;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #64748b;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .step.active {
+            color: #4f46e5;
+        }
+
+        .step.completed {
+            color: #10b981;
+        }
+
+        .step-number {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .step.active .step-number {
+            background: #4f46e5;
+            color: white;
+        }
+
+        .step.completed .step-number {
+            background: #10b981;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .data-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .step-indicator {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
