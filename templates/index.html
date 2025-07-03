@@ -113,13 +113,14 @@ cameraActionBtn.addEventListener('click', async () => {
     if (!cameraActive) {
         // Start camera
         try {
-    stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-        facingMode: { exact: "environment" },
-        width: { exact: 640 },
-        height: { exact: 480 }
-    } 
-});
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: { exact: "environment" },
+                    width: { ideal: 1920 }, // Try for Full HD video
+                    height: { ideal: 1080 }
+                },
+                audio: false // No audio needed for still capture
+            });
             webcamFeed.srcObject = stream;
             
             webcamFeed.onloadedmetadata = () => {
