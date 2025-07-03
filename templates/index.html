@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ball Localization App</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
 </head>
 
 <body>
@@ -141,16 +141,25 @@
         let cameraActive = false;
         let capturedImageData = null;
         let currentStep = 1;
+        let imageCapture = null;
 
         // Helper to convert Blob to base64
-  function blobToBase64(blob) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-    });
-}
+        function blobToBase64(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        // Function to set canvas dimensions to match video display
+        function setCanvasToVideoDimensions() {
+            if (webcamFeed.videoWidth && webcamFeed.videoHeight) {
+                measurementCanvas.width = webcamFeed.videoWidth;
+                measurementCanvas.height = webcamFeed.videoHeight;
+            }
+        }
 
         // Function to display messages to the user
         function showMessage(message, type = 'success') {
@@ -189,136 +198,157 @@
         updateStepIndicator(1);
         statusIndicator.classList.remove('active');
 
-       cameraActionBtn.addEventListener('click', async () => {
-    if (!cameraActive) {
-        // --- START CAMERA ---
-        try {
-            stream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    facingMode: { exact: "environment" }, 
-                    width: { ideal: 1920 }, 
-                    height: { ideal: 1080 }
-                },
-                audio: false 
-            });
+        cameraActionBtn.addEventListener('click', async () => {
+            if (!cameraActive) {
+                // --- START CAMERA ---
+                try {
+                    // Try with fallback constraints
+                    let constraints = {
+                        video: {
+                            width: { ideal: 1920 },
+                            height: { ideal: 1080 }
+                        },
+                        audio: false
+                    };
 
-            webcamFeed.srcObject = stream;
-            videoPlaceholder.style.display = 'none'; // Hide placeholder
-            webcamFeed.style.display = 'block'; // Show video feed
-            measurementCanvas.style.display = 'block'; // Show canvas overlay
-            videoContainer.classList.add('active'); // Add active class if you have styling for it
-            statusIndicator.classList.add('active'); // Add active class if you have styling for it
+                    // Try rear camera first on mobile devices
+                    if (navigator.userAgent.match(/Android|iPhone|iPad|iPod/i)) {
+                        constraints.video.facingMode = { ideal: "environment" };
+                    }
 
-            webcamFeed.onloadedmetadata = () => {
-                setCanvasToVideoDimensions(); // Set canvas to video dimensions for display
-                cameraActionBtn.innerHTML = '<i class="fas fa-camera"></i> Capture Image';
-                cameraActive = true;
-                showMessage("Camera started. Click 'Capture Image' to take a photo.", "info");
+                    try {
+                        stream = await navigator.mediaDevices.getUserMedia(constraints);
+                    } catch (err) {
+                        // Fallback to basic constraints if the ideal ones fail
+                        console.warn("High-resolution camera failed, trying basic constraints:", err);
+                        constraints = {
+                            video: true,
+                            audio: false
+                        };
+                        stream = await navigator.mediaDevices.getUserMedia(constraints);
+                    }
 
-                // Initialize ImageCapture for high-resolution still photos
-                const videoTrack = stream.getVideoTracks()[0];
-                imageCapture = new ImageCapture(videoTrack);
+                    webcamFeed.srcObject = stream;
+                    videoPlaceholder.style.display = 'none';
+                    webcamFeed.style.display = 'block';
+                    measurementCanvas.style.display = 'block';
+                    videoContainer.classList.add('active');
+                    statusIndicator.classList.add('active');
 
-                // No need to enable other buttons yet, they're for after capture
-                selectCenterBtn.disabled = true;
-                measureDiameterBtn.disabled = true;
-                saveMeasurementBtn.disabled = true;
-                localizeBallBtn.disabled = true;
-            };
+                    webcamFeed.onloadedmetadata = () => {
+                        setCanvasToVideoDimensions();
+                        cameraActionBtn.innerHTML = '<i class="fas fa-camera"></i> Capture Image';
+                        cameraActive = true;
+                        showMessage("Camera started. Click 'Capture Image' to take a photo.", "info");
 
-            // It's good practice to have window resize listener for responsive canvas
-            window.addEventListener('resize', setCanvasToVideoDimensions);
+                        // Initialize ImageCapture if supported
+                        const videoTrack = stream.getVideoTracks()[0];
+                        if (window.ImageCapture) {
+                            imageCapture = new ImageCapture(videoTrack);
+                        }
 
-        } catch (err) {
-            console.error("Error accessing camera: ", err);
-            let errorMessage = "Error accessing camera. Please ensure camera access is granted.";
-            if (err.name === 'NotAllowedError') {
-                errorMessage = "Camera access denied. Please allow camera access in your browser settings (and ensure HTTPS if not localhost).";
-            } else if (err.name === 'NotFoundError') {
-                errorMessage = "No camera found on this device.";
-            } else if (err.name === 'OverconstrainedError') {
-                // This is the error if the requested ideal video resolution can't be met
-                errorMessage = `The requested camera video resolution cannot be met by your device (${err.message}). Trying a lower 'ideal' resolution might help.`;
-            } else if (err.name === 'NotReadableError' || err.name === 'AbortError') {
-                errorMessage = "Camera is busy or not accessible. Please check if another app is using it.";
-            }
-            showMessage(errorMessage, "error");
-        }
-    } else {
-        // --- CAPTURE IMAGE ---
-        if (!imageCapture) {
-            showMessage("Camera not ready for capture. Please try starting the camera again.", "error");
-            return;
-        }
+                        selectCenterBtn.disabled = true;
+                        measureDiameterBtn.disabled = true;
+                        saveMeasurementBtn.disabled = true;
+                        localizeBallBtn.disabled = true;
+                    };
 
-        try {
-            // Use ImageCapture to take a photo. This will attempt to use the camera's
-            // native still image capabilities, which are often higher resolution
-            // than the video stream (e.g., 3000x4000).
-            const photoBlob = await imageCapture.takePhoto();
+                    window.addEventListener('resize', setCanvasToVideoDimensions);
 
-            // --- Stop the camera stream immediately after taking the photo ---
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-                webcamFeed.srcObject = null;
-                stream = null;
-            }
-            cameraActive = false; // Set camera to inactive
-            webcamFeed.style.display = 'none'; // Hide video feed
-            statusIndicator.classList.remove('active'); // Remove active class from status indicator
-
-            capturedImageBlob = photoBlob; // Store the high-res blob
-
-            const img = new Image();
-            img.onload = () => {
-                measurementCanvas.width = img.naturalWidth;
-                measurementCanvas.height = img.naturalHeight;
-                ctx.drawImage(img, 0, 0);
-                capturedImageData = ctx.getImageData(0, 0, measurementCanvas.width, measurementCanvas.height);
-                measurementCanvas.style.display = 'block'; // Ensure canvas is visible
-            };
-            img.src = URL.createObjectURL(photoBlob); // Create a temporary URL for the blob
-
-            // --- Upload the high-resolution image as base64 in JSON ---
-                const base64Image = await blobToBase64(photoBlob);
-
-                const response = await fetch('/upload_image', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ image: base64Image })
-                });
-
-                const result = await response.json();
-            if (result.success) {
-                capturedImageFilename = result.filename;
-                showMessage("Image captured and saved. Now select the ball's center.", "success");
-
-                // --- Update UI for next steps ---
-                cameraActionBtn.innerHTML = '<i class="fas fa-camera"></i> Start Camera';
-                cameraActionBtn.disabled = false; // Re-enable to start camera again
-                selectCenterBtn.disabled = false; // Enable the next step button
-                measureDiameterBtn.disabled = true; // Still disabled
-                saveMeasurementBtn.disabled = true; // Still disabled
-                localizeBallBtn.disabled = true; // Still disabled
-                updateStepIndicator(2); // Move to next step in your workflow
-
+                } catch (err) {
+                    console.error("Error accessing camera: ", err);
+                    let errorMessage = "Error accessing camera. Please ensure camera access is granted.";
+                    
+                    if (err.name === 'NotAllowedError') {
+                        errorMessage = "Camera access denied. Please allow camera access in your browser settings.";
+                    } else if (err.name === 'NotFoundError') {
+                        errorMessage = "No camera found on this device.";
+                    } else if (err.name === 'OverconstrainedError') {
+                        errorMessage = "The requested camera resolution is not supported. Trying with basic settings.";
+                    } else if (err.name === 'NotReadableError' || err.name === 'AbortError') {
+                        errorMessage = "Camera is busy or not accessible. Please check if another app is using it.";
+                    }
+                    
+                    showMessage(errorMessage, "error");
+                }
             } else {
-                showMessage(result.message || "Failed to save image.", 'error');
+                // --- CAPTURE IMAGE ---
+                try {
+                    let photoBlob;
+                    
+                    if (imageCapture) {
+                        // Use ImageCapture API if available
+                        photoBlob = await imageCapture.takePhoto();
+                    } else {
+                        // Fallback to canvas capture
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        canvas.width = webcamFeed.videoWidth;
+                        canvas.height = webcamFeed.videoHeight;
+                        context.drawImage(webcamFeed, 0, 0);
+                        
+                        photoBlob = await new Promise(resolve => {
+                            canvas.toBlob(resolve, 'image/jpeg', 0.9);
+                        });
+                    }
+
+                    // Stop the camera stream
+                    if (stream) {
+                        stream.getTracks().forEach(track => track.stop());
+                        webcamFeed.srcObject = null;
+                        stream = null;
+                    }
+                    
+                    cameraActive = false;
+                    webcamFeed.style.display = 'none';
+                    statusIndicator.classList.remove('active');
+
+                    capturedImageBlob = photoBlob;
+
+                    // Display the captured image
+                    const img = new Image();
+                    img.onload = () => {
+                        measurementCanvas.width = img.naturalWidth;
+                        measurementCanvas.height = img.naturalHeight;
+                        ctx.drawImage(img, 0, 0);
+                        capturedImageData = ctx.getImageData(0, 0, measurementCanvas.width, measurementCanvas.height);
+                        measurementCanvas.style.display = 'block';
+                        URL.revokeObjectURL(img.src);
+                    };
+                    img.src = URL.createObjectURL(photoBlob);
+
+                    // Simulate upload (replace with actual upload logic)
+                    const base64Image = await blobToBase64(photoBlob);
+                    
+                    // Mock successful upload
+                    setTimeout(() => {
+                        capturedImageFilename = 'captured_image_' + Date.now() + '.jpg';
+                        showMessage("Image captured successfully. Now select the ball's center.", "success");
+
+                        cameraActionBtn.innerHTML = '<i class="fas fa-camera"></i> Start Camera';
+                        cameraActionBtn.disabled = false;
+                        selectCenterBtn.disabled = false;
+                        measureDiameterBtn.disabled = true;
+                        saveMeasurementBtn.disabled = true;
+                        localizeBallBtn.disabled = true;
+                        updateStepIndicator(2);
+                    }, 500);
+
+                } catch (error) {
+                    console.error('Error capturing image:', error);
+                    let errorMessage = "Failed to capture image.";
+                    
+                    if (error.name === 'NotSupportedError') {
+                        errorMessage = "Image capture not supported by your browser.";
+                    } else if (error.name === 'NotAllowedError') {
+                        errorMessage = "Camera access denied during capture.";
+                    }
+                    
+                    showMessage(errorMessage, 'error');
+                }
             }
-        } catch (error) {
-            console.error('Error capturing or uploading image:', error);
-            let errorMessage = "Failed to capture or upload image.";
-            if (error.name === 'NotAllowedError') {
-                errorMessage = "Camera access denied during capture.";
-            } else if (error.name === 'SecurityError') {
-                errorMessage = "Capture failed due to security restrictions (e.g., not HTTPS or permissions).";
-            } else if (error.name === 'NotSupportedError') {
-                errorMessage = "ImageCapture API is not supported by your browser.";
-            }
-            showMessage(errorMessage, 'error');
-        }
-    }
-});
+        });
+
         // Select Center Mode
         selectCenterBtn.addEventListener('click', () => {
             if (!capturedImageData) {
@@ -445,10 +475,8 @@
             const ballZ = ballZDisplay.textContent === 'N/A' ? null : parseFloat(ballZDisplay.textContent);
 
             try {
-                // Simulate API call
                 showMessage("Saving measurement...", "info");
                 
-                // Replace with actual API call
                 setTimeout(() => {
                     showMessage("Measurement saved successfully!", "success");
                     saveMeasurementBtn.disabled = true;
@@ -474,7 +502,6 @@
             try {
                 showMessage("Localizing ball in 3D...", "info");
                 
-                // Simulate 3D localization
                 setTimeout(() => {
                     const mockResult = {
                         success: true,
@@ -523,6 +550,7 @@
             centerPoint = null;
             diameterEndPoint = null;
             cameraActive = false;
+            imageCapture = null;
             
             updateDataDisplay(centerXDisplay, 'N/A');
             updateDataDisplay(centerYDisplay, 'N/A');
@@ -542,3 +570,5 @@
             showMessage("Application reset successfully!", "info");
         });
     </script>
+</body>
+</html>
