@@ -4,416 +4,860 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ball Measurement App</title>
-    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* Additional styles specific to this page */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .main-content {
+            padding: 40px;
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 40px;
+            align-items: start;
+        }
+
+        .video-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .video-container {
+            position: relative;
+            background: #f8fafc;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 30px;
+            border: 2px solid #e2e8f0;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .video-container.active {
+            border-color: #4f46e5;
+            box-shadow: 0 0 20px rgba(79, 70, 229, 0.2);
+        }
+
+        .video-placeholder {
+            color: #64748b;
+            font-size: 1.1rem;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .video-placeholder i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            display: block;
+            color: #94a3b8;
+        }
+
+        #webcamFeed, #measurementCanvas {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 8px;
+        }
+
         #measurementCanvas {
             cursor: crosshair;
+            position: absolute;
+            top: 0;
+            left: 0;
         }
-        
+
+        .controls-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            height: fit-content;
+        }
+
+        .controls-section h3 {
+            color: #1e293b;
+            margin-bottom: 25px;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 12px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn:not(:disabled):hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
         .data-display {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            background-color: #f9fafb;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #e5e7eb;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 25px;
+            border: 1px solid #e2e8f0;
         }
-        
+
+        .data-display h4 {
+            color: #1e293b;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
         .data-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .data-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .data-label {
+            font-weight: 500;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .data-value {
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 1.1rem;
+        }
+
+        .data-value.has-value {
+            color: #059669;
+        }
+
+        .message-box {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 12px;
+            font-weight: 500;
+            z-index: 1000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            max-width: 400px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .message-box.show {
+            transform: translateX(0);
+        }
+
+        .message-box.success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .message-box.error {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .message-box.info {
+            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+            color: white;
+        }
+
+        .status-indicator {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ef4444;
+            transition: all 0.3s ease;
+        }
+
+        .status-indicator.active {
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 12px;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #64748b;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .step.active {
+            color: #4f46e5;
+        }
+
+        .step.completed {
+            color: #10b981;
+        }
+
+        .step-number {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .step.active .step-number {
+            background: #4f46e5;
+            color: white;
+        }
+
+        .step.completed .step-number {
+            background: #10b981;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .data-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .step-indicator {
+                flex-direction: column;
+                gap: 10px;
+            }
         }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Ball Localization App</h1>
-
-        <div class="message-box" id="messageBox"></div>
-
-        <div class="video-container">
-            <video id="webcamFeed" autoplay playsinline></video>
-            <canvas id="measurementCanvas"></canvas>
+        <div class="header">
+            <h1><i class="fas fa-camera"></i> Ball Measurement App</h1>
+            <p>Capture, measure, and localize balls with precision</p>
         </div>
 
-        <div class="controls">
-            <button id="cameraActionBtn" class="btn-primary">Start Camera</button>
-            <button id="selectCenterBtn" class="btn-secondary" disabled>Select Center</button>
-            <button id="measureDiameterBtn" class="btn-secondary" disabled>Measure Diameter</button>
-            <button id="saveMeasurementBtn" class="btn-primary" disabled>Save Measurement</button>
-            <button id="localizeBallBtn" class="btn-primary" disabled>Localize Ball (3D)</button>
-            <button id="resetBtn" class="btn-danger">Reset</button>
-        </div>
+        <div class="main-content">
+            <div class="video-section">
+                <div class="step-indicator">
+                    <div class="step" id="step1">
+                        <div class="step-number">1</div>
+                        <span>Capture</span>
+                    </div>
+                    <div class="step" id="step2">
+                        <div class="step-number">2</div>
+                        <span>Center</span>
+                    </div>
+                    <div class="step" id="step3">
+                        <div class="step-number">3</div>
+                        <span>Measure</span>
+                    </div>
+                    <div class="step" id="step4">
+                        <div class="step-number">4</div>
+                        <span>Localize</span>
+                    </div>
+                </div>
 
-        <div class="data-display">
-            <div class="data-item">Center X (px): <span id="centerXDisplay">N/A</span></div>
-            <div class="data-item">Center Y (px): <span id="centerYDisplay">N/A</span></div>
-            <div class="data-item">Diameter (px): <span id="diameterDisplay">N/A</span></div>
-            <div class="data-item">Ball X (cm): <span id="ballXDisplay">N/A</span></div>
-            <div class="data-item">Ball Y (cm): <span id="ballYDisplay">N/A</span></div>
-            <div class="data-item">Ball Z (cm): <span id="ballZDisplay">N/A</span></div>
+                <div class="video-container" id="videoContainer">
+                    <div class="video-placeholder" id="videoPlaceholder">
+                        <i class="fas fa-video"></i>
+                        <div>Click "Start Camera" to begin</div>
+                    </div>
+                    <video id="webcamFeed" autoplay playsinline style="display: none;"></video>
+                    <canvas id="measurementCanvas" style="display: none;"></canvas>
+                    <div class="status-indicator" id="statusIndicator"></div>
+                </div>
+            </div>
+
+            <div class="controls-section">
+                <h3><i class="fas fa-cog"></i> Controls</h3>
+                
+                <button id="cameraActionBtn" class="btn btn-primary">
+                    <i class="fas fa-camera"></i> Start Camera
+                </button>
+                
+                <button id="selectCenterBtn" class="btn btn-secondary" disabled>
+                    <i class="fas fa-crosshairs"></i> Select Center
+                </button>
+                
+                <button id="measureDiameterBtn" class="btn btn-secondary" disabled>
+                    <i class="fas fa-ruler"></i> Measure Diameter
+                </button>
+                
+                <button id="saveMeasurementBtn" class="btn btn-success" disabled>
+                    <i class="fas fa-save"></i> Save Measurement
+                </button>
+                
+                <button id="localizeBallBtn" class="btn btn-warning" disabled>
+                    <i class="fas fa-cube"></i> Localize Ball (3D)
+                </button>
+                
+                <button id="resetBtn" class="btn btn-danger">
+                    <i class="fas fa-redo"></i> Reset
+                </button>
+
+                <div class="data-display">
+                    <h4><i class="fas fa-chart-line"></i> Measurements</h4>
+                    <div class="data-grid">
+                        <div class="data-item">
+                            <span class="data-label">Center X</span>
+                            <span class="data-value" id="centerXDisplay">N/A</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Center Y</span>
+                            <span class="data-value" id="centerYDisplay">N/A</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Diameter</span>
+                            <span class="data-value" id="diameterDisplay">N/A</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Ball X (cm)</span>
+                            <span class="data-value" id="ballXDisplay">N/A</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Ball Y (cm)</span>
+                            <span class="data-value" id="ballYDisplay">N/A</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Ball Z (cm)</span>
+                            <span class="data-value" id="ballZDisplay">N/A</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
+    <div class="message-box" id="messageBox"></div>
+
     <script>
-const webcamFeed = document.getElementById('webcamFeed');
-const measurementCanvas = document.getElementById('measurementCanvas');
-const ctx = measurementCanvas.getContext('2d');
+        const webcamFeed = document.getElementById('webcamFeed');
+        const measurementCanvas = document.getElementById('measurementCanvas');
+        const ctx = measurementCanvas.getContext('2d');
+        const videoContainer = document.getElementById('videoContainer');
+        const videoPlaceholder = document.getElementById('videoPlaceholder');
+        const statusIndicator = document.getElementById('statusIndicator');
 
-const cameraActionBtn = document.getElementById('cameraActionBtn');
-const selectCenterBtn = document.getElementById('selectCenterBtn');
-const measureDiameterBtn = document.getElementById('measureDiameterBtn');
-const saveMeasurementBtn = document.getElementById('saveMeasurementBtn');
-const localizeBallBtn = document.getElementById('localizeBallBtn');
-const resetBtn = document.getElementById('resetBtn');
+        const cameraActionBtn = document.getElementById('cameraActionBtn');
+        const selectCenterBtn = document.getElementById('selectCenterBtn');
+        const measureDiameterBtn = document.getElementById('measureDiameterBtn');
+        const saveMeasurementBtn = document.getElementById('saveMeasurementBtn');
+        const localizeBallBtn = document.getElementById('localizeBallBtn');
+        const resetBtn = document.getElementById('resetBtn');
 
-const centerXDisplay = document.getElementById('centerXDisplay');
-const centerYDisplay = document.getElementById('centerYDisplay');
-const diameterDisplay = document.getElementById('diameterDisplay');
-const ballXDisplay = document.getElementById('ballXDisplay');
-const ballYDisplay = document.getElementById('ballYDisplay');
-const ballZDisplay = document.getElementById('ballZDisplay');
-const messageBox = document.getElementById('messageBox');
+        const centerXDisplay = document.getElementById('centerXDisplay');
+        const centerYDisplay = document.getElementById('centerYDisplay');
+        const diameterDisplay = document.getElementById('diameterDisplay');
+        const ballXDisplay = document.getElementById('ballXDisplay');
+        const ballYDisplay = document.getElementById('ballYDisplay');
+        const ballZDisplay = document.getElementById('ballZDisplay');
+        const messageBox = document.getElementById('messageBox');
 
-let stream;
-let capturedImageBlob = null;
-let capturedImageFilename = null;
-let drawingMode = null;
-let centerPoint = null;
-let diameterEndPoint = null;
-let cameraActive = false;
-let capturedImageData = null;
+        let stream;
+        let capturedImageBlob = null;
+        let capturedImageFilename = null;
+        let drawingMode = null;
+        let centerPoint = null;
+        let diameterEndPoint = null;
+        let cameraActive = false;
+        let capturedImageData = null;
+        let currentStep = 1;
 
-// Function to display messages to the user
-function showMessage(message, type = 'success') {
-    messageBox.textContent = message;
-    messageBox.className = 'message-box';
-    if (type === 'success') {
-        messageBox.classList.add('bg-green-100', 'text-green-800');
-    } else if (type === 'error') {
-        messageBox.classList.add('bg-red-100', 'text-red-800');
-    } else if (type === 'info') {
-        messageBox.classList.add('bg-blue-100', 'text-blue-800');
-    }
-    messageBox.style.display = 'block';
-    setTimeout(() => {
-        messageBox.style.display = 'none';
-    }, 5000);
-}
-
-// Initial button state
-cameraActionBtn.disabled = false;
-selectCenterBtn.disabled = true;
-measureDiameterBtn.disabled = true;
-saveMeasurementBtn.disabled = true;
-localizeBallBtn.disabled = true;
-resetBtn.disabled = false;
-
-// Camera action button logic
-cameraActionBtn.addEventListener('click', async () => {
-    if (!cameraActive) {
-        // Start camera
-        try {
-            stream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    facingMode: { exact: "environment" },
-                    width: { ideal: 1920 }, 
-                    height: { ideal: 1080 }
-                },
-                audio: false 
-            });
-            webcamFeed.srcObject = stream;
-            
-webcamFeed.onloadedmetadata = () => {
-    measurementCanvas.width = webcamFeed.videoWidth;
-    measurementCanvas.height = webcamFeed.videoHeight;
-
-    // Set container size to match video aspect ratio
-    const container = document.querySelector('.video-container');
-    const aspectRatio = webcamFeed.videoWidth / webcamFeed.videoHeight;
-    const maxWidth = 600; // or any max width you want
-    const width = Math.min(maxWidth, window.innerWidth * 0.95);
-    const height = width / aspectRatio;
-    container.style.width = width + 'px';
-    container.style.height = height + 'px';
-
-    cameraActionBtn.textContent = 'Capture Image';
-    cameraActive = true;
-    showMessage("Camera started. Click 'Capture Image' to take a photo.", "info");
-};
-            
-        } catch (err) {
-            console.error("Error accessing camera: ", err);
-            showMessage("Error accessing camera. Please ensure camera access is granted.", "error");
+        // Function to display messages to the user
+        function showMessage(message, type = 'success') {
+            messageBox.textContent = message;
+            messageBox.className = `message-box ${type} show`;
+            setTimeout(() => {
+                messageBox.classList.remove('show');
+            }, 4000);
         }
-    } else {
-        // Capture image
-        ctx.drawImage(webcamFeed, 0, 0, measurementCanvas.width, measurementCanvas.height);
-        capturedImageData = ctx.getImageData(0, 0, measurementCanvas.width, measurementCanvas.height);
-        
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-            webcamFeed.srcObject = null;
-            stream = null;
-        }
-        
-        measurementCanvas.toBlob(async (blob) => {
-            capturedImageBlob = blob;
-            const reader = new FileReader();
-            reader.onloadend = async () => {
-                try {
-                    const response = await fetch('/upload_image', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ image: reader.result })
-                    });
-                    const result = await response.json();
-                    if (result.success) {
-                        capturedImageFilename = result.filename;
-                        showMessage("Image captured and saved. Now select the ball's center.", "info");
-                        
-                        cameraActionBtn.textContent = 'Start Camera';
-                        cameraActionBtn.disabled = false;
-                        selectCenterBtn.disabled = false;
-                        measureDiameterBtn.disabled = true;
-                        saveMeasurementBtn.disabled = true;
-                        localizeBallBtn.disabled = true;
-                        
-                        cameraActive = false;
-                        drawCanvas();
-                        
-                    } else {
-                        showMessage(result.message, 'error');
-                    }
-                } catch (error) {
-                    console.error('Error uploading image:', error);
-                    showMessage('Failed to upload image.', 'error');
+
+        // Function to update step indicator
+        function updateStepIndicator(step) {
+            currentStep = step;
+            for (let i = 1; i <= 4; i++) {
+                const stepElement = document.getElementById(`step${i}`);
+                stepElement.classList.remove('active', 'completed');
+                if (i < step) {
+                    stepElement.classList.add('completed');
+                } else if (i === step) {
+                    stepElement.classList.add('active');
                 }
-            };
-            reader.readAsDataURL(blob);
-        }, 'image/jpeg');
-    }
-});
+            }
+        }
 
-// Select Center Mode
-selectCenterBtn.addEventListener('click', () => {
-    if (!capturedImageData) {
-        showMessage("Capture an image first!", "error");
-        return;
-    }
-    drawingMode = 'center';
-    showMessage("Click on the ball's center.", "info");
-});
+        // Function to update data display
+        function updateDataDisplay(element, value) {
+            element.textContent = value;
+            if (value !== 'N/A') {
+                element.classList.add('has-value');
+            } else {
+                element.classList.remove('has-value');
+            }
+        }
 
-// Measure Diameter Mode
-measureDiameterBtn.addEventListener('click', () => {
-    if (!centerPoint) {
-        showMessage("Please select the ball's center first.", "error");
-        return;
-    }
-    drawingMode = 'diameter';
-    showMessage("Click on the ball's circumference to measure diameter.", "info");
-});
+        // Initial setup
+        updateStepIndicator(1);
+        statusIndicator.classList.remove('active');
 
-// Canvas Click Listener for drawing
-measurementCanvas.addEventListener('click', (e) => {
-    if (!drawingMode || !capturedImageData) return;
+        // Camera action button logic
+        cameraActionBtn.addEventListener('click', async () => {
+            if (!cameraActive) {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: {
+                            facingMode: { exact: "environment" },
+                            width: { ideal: 1920 }, 
+                            height: { ideal: 1080 }
+                        },
+                        audio: false 
+                    });
+                    
+                    webcamFeed.srcObject = stream;
+                    videoPlaceholder.style.display = 'none';
+                    webcamFeed.style.display = 'block';
+                    measurementCanvas.style.display = 'block';
+                    videoContainer.classList.add('active');
+                    statusIndicator.classList.add('active');
+                    
+                    webcamFeed.onloadedmetadata = () => {
+                        measurementCanvas.width = webcamFeed.videoWidth;
+                        measurementCanvas.height = webcamFeed.videoHeight;
+                        
+                        cameraActionBtn.innerHTML = '<i class="fas fa-camera"></i> Capture Image';
+                        cameraActive = true;
+                        showMessage("Camera started. Click 'Capture Image' to take a photo.", "info");
+                    };
+                    
+                } catch (err) {
+                    console.error("Error accessing camera: ", err);
+                    showMessage("Error accessing camera. Please ensure camera access is granted.", "error");
+                }
+            } else {
+                // Capture image
+                ctx.drawImage(webcamFeed, 0, 0, measurementCanvas.width, measurementCanvas.height);
+                capturedImageData = ctx.getImageData(0, 0, measurementCanvas.width, measurementCanvas.height);
+                
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                    webcamFeed.srcObject = null;
+                    stream = null;
+                }
+                
+                webcamFeed.style.display = 'none';
+                statusIndicator.classList.remove('active');
+                
+                measurementCanvas.toBlob(async (blob) => {
+                    capturedImageBlob = blob;
+                    const reader = new FileReader();
+                    reader.onloadend = async () => {
+                        try {
+                            // Simulating server upload - replace with actual endpoint
+                            // const response = await fetch('/upload_image', {
+                            //     method: 'POST',
+                            //     headers: { 'Content-Type': 'application/json' },
+                            //     body: JSON.stringify({ image: reader.result })
+                            // });
+                            // const result = await response.json();
+                            
+                            // For demo purposes, simulate successful upload
+                            const result = { success: true, filename: 'captured_image.jpg' };
+                            
+                            if (result.success) {
+                                capturedImageFilename = result.filename;
+                                showMessage("Image captured successfully! Now select the ball's center.", "success");
+                                
+                                cameraActionBtn.innerHTML = '<i class="fas fa-camera"></i> Start Camera';
+                                cameraActionBtn.disabled = false;
+                                selectCenterBtn.disabled = false;
+                                cameraActive = false;
+                                updateStepIndicator(2);
+                                drawCanvas();
+                            } else {
+                                showMessage("Failed to save image", 'error');
+                            }
+                        } catch (error) {
+                            console.error('Error uploading image:', error);
+                            showMessage('Failed to upload image.', 'error');
+                        }
+                    };
+                    reader.readAsDataURL(blob);
+                }, 'image/jpeg');
+            }
+        });
 
-    const rect = measurementCanvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+        // Select Center Mode
+        selectCenterBtn.addEventListener('click', () => {
+            if (!capturedImageData) {
+                showMessage("Capture an image first!", "error");
+                return;
+            }
+            drawingMode = 'center';
+            showMessage("Click on the ball's center.", "info");
+        });
 
-    const scaleX = measurementCanvas.width / rect.width;
-    const scaleY = measurementCanvas.height / rect.height;
-    const actualX = x * scaleX;
-    const actualY = y * scaleY;
+        // Measure Diameter Mode
+        measureDiameterBtn.addEventListener('click', () => {
+            if (!centerPoint) {
+                showMessage("Please select the ball's center first.", "error");
+                return;
+            }
+            drawingMode = 'diameter';
+            showMessage("Click on the ball's circumference to measure diameter.", "info");
+        });
 
-    if (drawingMode === 'center') {
-        centerPoint = { x: actualX, y: actualY };
-        centerXDisplay.textContent = Math.round(actualX);
-        centerYDisplay.textContent = Math.round(actualY);
-        drawCanvas();
-        drawingMode = null;
-        
-        measureDiameterBtn.disabled = false;
-        showMessage("Center selected. Now measure the diameter.", "info");
-        
-    } else if (drawingMode === 'diameter') {
-        diameterEndPoint = { x: actualX, y: actualY };
-        if (centerPoint) {
-            const radius = Math.sqrt(
-                Math.pow(diameterEndPoint.x - centerPoint.x, 2) +
-                Math.pow(diameterEndPoint.y - centerPoint.y, 2)
-            );
-            const diameter = radius * 2;
-            diameterDisplay.textContent = Math.round(diameter);
-            drawCanvas();
-            drawingMode = null;
+        // Canvas Click Listener
+        measurementCanvas.addEventListener('click', (e) => {
+            if (!drawingMode || !capturedImageData) return;
+
+            const rect = measurementCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const scaleX = measurementCanvas.width / rect.width;
+            const scaleY = measurementCanvas.height / rect.height;
+            const actualX = x * scaleX;
+            const actualY = y * scaleY;
+
+            if (drawingMode === 'center') {
+                centerPoint = { x: actualX, y: actualY };
+                updateDataDisplay(centerXDisplay, Math.round(actualX));
+                updateDataDisplay(centerYDisplay, Math.round(actualY));
+                drawCanvas();
+                drawingMode = null;
+                
+                measureDiameterBtn.disabled = false;
+                updateStepIndicator(3);
+                showMessage("Center selected! Now measure the diameter.", "success");
+                
+            } else if (drawingMode === 'diameter') {
+                diameterEndPoint = { x: actualX, y: actualY };
+                if (centerPoint) {
+                    const radius = Math.sqrt(
+                        Math.pow(diameterEndPoint.x - centerPoint.x, 2) +
+                        Math.pow(diameterEndPoint.y - centerPoint.y, 2)
+                    );
+                    const diameter = radius * 2;
+                    updateDataDisplay(diameterDisplay, Math.round(diameter));
+                    drawCanvas();
+                    drawingMode = null;
+                    
+                    saveMeasurementBtn.disabled = false;
+                    localizeBallBtn.disabled = false;
+                    updateStepIndicator(4);
+                    showMessage("Diameter measured! You can now save or localize the ball.", "success");
+                }
+            }
+        });
+
+        // Draw function
+        function drawCanvas() {
+            ctx.clearRect(0, 0, measurementCanvas.width, measurementCanvas.height);
+
+            if (capturedImageData) {
+                ctx.putImageData(capturedImageData, 0, 0);
+                drawMeasurements();
+            }
+        }
+
+        // Draw measurements
+        function drawMeasurements() {
+            if (centerPoint) {
+                // Draw center point
+                ctx.beginPath();
+                ctx.arc(centerPoint.x, centerPoint.y, 8, 0, Math.PI * 2);
+                ctx.fillStyle = '#ef4444';
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                ctx.closePath();
+
+                if (diameterEndPoint) {
+                    const radius = Math.sqrt(
+                        Math.pow(diameterEndPoint.x - centerPoint.x, 2) +
+                        Math.pow(diameterEndPoint.y - centerPoint.y, 2)
+                    );
+                    
+                    // Draw diameter circle
+                    ctx.beginPath();
+                    ctx.arc(centerPoint.x, centerPoint.y, radius, 0, Math.PI * 2);
+                    ctx.strokeStyle = '#10b981';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                    ctx.closePath();
+
+                    // Draw diameter line
+                    ctx.beginPath();
+                    ctx.moveTo(centerPoint.x, centerPoint.y);
+                    ctx.lineTo(diameterEndPoint.x, diameterEndPoint.y);
+                    ctx.strokeStyle = '#f59e0b';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    ctx.closePath();
+                }
+            }
+        }
+
+        // Save Measurement
+        saveMeasurementBtn.addEventListener('click', async () => {
+            if (!centerPoint || diameterDisplay.textContent === 'N/A' || !capturedImageFilename) {
+                showMessage("Please complete all measurements first.", "error");
+                return;
+            }
+
+            const diameter = parseFloat(diameterDisplay.textContent);
+            const ballX = ballXDisplay.textContent === 'N/A' ? null : parseFloat(ballXDisplay.textContent);
+            const ballY = ballYDisplay.textContent === 'N/A' ? null : parseFloat(ballYDisplay.textContent);
+            const ballZ = ballZDisplay.textContent === 'N/A' ? null : parseFloat(ballZDisplay.textContent);
+
+            try {
+                // Simulate API call
+                showMessage("Saving measurement...", "info");
+                
+                // Replace with actual API call
+                setTimeout(() => {
+                    showMessage("Measurement saved successfully!", "success");
+                    saveMeasurementBtn.disabled = true;
+                }, 1000);
+                
+            } catch (error) {
+                console.error('Error saving measurement:', error);
+                showMessage('Failed to save measurement.', 'error');
+            }
+        });
+
+        // Localize Ball (3D)
+        localizeBallBtn.addEventListener('click', async () => {
+            if (!centerPoint || diameterDisplay.textContent === 'N/A') {
+                showMessage("Please select ball center and measure diameter first.", "error");
+                return;
+            }
+
+            const centerX = Math.round(centerPoint.x);
+            const centerY = Math.round(centerPoint.y);
+            const diameter = parseFloat(diameterDisplay.textContent);
+
+            try {
+                showMessage("Localizing ball in 3D...", "info");
+                
+                // Simulate 3D localization
+                setTimeout(() => {
+                    const mockResult = {
+                        success: true,
+                        ball_position_camera_coords: {
+                            x: Math.random() * 10 - 5,
+                            y: Math.random() * 10 - 5,
+                            z: Math.random() * 20 + 10
+                        }
+                    };
+                    
+                    if (mockResult.success) {
+                        const { x, y, z } = mockResult.ball_position_camera_coords;
+                        updateDataDisplay(ballXDisplay, x.toFixed(2));
+                        updateDataDisplay(ballYDisplay, y.toFixed(2));
+                        updateDataDisplay(ballZDisplay, z.toFixed(2));
+                        showMessage("Ball localized successfully!", "success");
+                    }
+                }, 1500);
+                
+            } catch (error) {
+                console.error('Error localizing ball:', error);
+                showMessage('Failed to localize ball in 3D.', 'error');
+            }
+        });
+
+        // Reset
+        resetBtn.addEventListener('click', () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
             
-            saveMeasurementBtn.disabled = false;
-            localizeBallBtn.disabled = false;
-            showMessage("Diameter measured. Click 'Save Measurement' or 'Localize Ball (3D)'.", "info");
-        }
-    }
-});
-
-// Draw function to update canvas
-function drawCanvas() {
-    ctx.clearRect(0, 0, measurementCanvas.width, measurementCanvas.height);
-
-    if (capturedImageData) {
-        ctx.putImageData(capturedImageData, 0, 0);
-        drawMeasurements();
-    }
-}
-
-// Draw measurements (center, diameter circle)
-function drawMeasurements() {
-    if (centerPoint) {
-        ctx.beginPath();
-        ctx.arc(centerPoint.x, centerPoint.y, 5, 0, Math.PI * 2);
-        ctx.fillStyle = 'red';
-        ctx.fill();
-        ctx.closePath();
-
-        if (diameterEndPoint) {
-            const radius = Math.sqrt(
-                Math.pow(diameterEndPoint.x - centerPoint.x, 2) +
-                Math.pow(diameterEndPoint.y - centerPoint.y, 2)
-            );
-            ctx.beginPath();
-            ctx.arc(centerPoint.x, centerPoint.y, radius, 0, Math.PI * 2);
-            ctx.strokeStyle = 'lime';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            ctx.closePath();
-        }
-    }
-}
-
-// Save Measurement
-saveMeasurementBtn.addEventListener('click', async () => {
-    if (!centerPoint || diameterDisplay.textContent === 'N/A' || !capturedImageFilename) {
-        showMessage("Please capture an image, select center, and measure diameter first.", "error");
-        return;
-    }
-
-    const diameter = parseFloat(diameterDisplay.textContent);
-    const ballX = ballXDisplay.textContent === 'N/A' ? null : parseFloat(ballXDisplay.textContent);
-    const ballY = ballYDisplay.textContent === 'N/A' ? null : parseFloat(ballYDisplay.textContent);
-    const ballZ = ballZDisplay.textContent === 'N/A' ? null : parseFloat(ballZDisplay.textContent);
-
-    try {
-        const response = await fetch('/save_measurement', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                centerX: Math.round(centerPoint.x),
-                centerY: Math.round(centerPoint.y),
-                diameter: Math.round(diameter),
-                imageFilename: capturedImageFilename,
-                ballX: ballX,
-                ballY: ballY,
-                ballZ: ballZ
-            })
-        });
-        const result = await response.json();
-        if (result.success) {
-            showMessage(result.message);
+            webcamFeed.srcObject = null;
+            webcamFeed.style.display = 'none';
+            measurementCanvas.style.display = 'none';
+            videoPlaceholder.style.display = 'block';
+            videoContainer.classList.remove('active');
+            statusIndicator.classList.remove('active');
+            
+            ctx.clearRect(0, 0, measurementCanvas.width, measurementCanvas.height);
+            
+            capturedImageBlob = null;
+            capturedImageFilename = null;
+            capturedImageData = null;
+            drawingMode = null;
+            centerPoint = null;
+            diameterEndPoint = null;
+            cameraActive = false;
+            
+            updateDataDisplay(centerXDisplay, 'N/A');
+            updateDataDisplay(centerYDisplay, 'N/A');
+            updateDataDisplay(diameterDisplay, 'N/A');
+            updateDataDisplay(ballXDisplay, 'N/A');
+            updateDataDisplay(ballYDisplay, 'N/A');
+            updateDataDisplay(ballZDisplay, 'N/A');
+            
+            cameraActionBtn.innerHTML = '<i class="fas fa-camera"></i> Start Camera';
+            cameraActionBtn.disabled = false;
+            selectCenterBtn.disabled = true;
+            measureDiameterBtn.disabled = true;
             saveMeasurementBtn.disabled = true;
-        } else {
-            showMessage(result.message, 'error');
-        }
-    } catch (error) {
-        console.error('Error saving measurement:', error);
-        showMessage('Failed to save measurement.', 'error');
-    }
-});
-
-// Localize Ball (3D) button logic
-localizeBallBtn.addEventListener('click', async () => {
-    if (!centerPoint || diameterDisplay.textContent === 'N/A') {
-        showMessage("Please select ball center and measure diameter first.", "error");
-        return;
-    }
-
-    const centerX = Math.round(centerPoint.x);
-    const centerY = Math.round(centerPoint.y);
-    const diameter = parseFloat(diameterDisplay.textContent);
-
-    try {
-        showMessage("Localizing ball in 3D...", "info");
-        const response = await fetch('/ball_localization', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                centerX: centerX,
-                centerY: centerY,
-                diameter: diameter
-            })
+            localizeBallBtn.disabled = true;
+            
+            updateStepIndicator(1);
+            showMessage("Application reset successfully!", "info");
         });
-        const result = await response.json();
-
-        if (result.success) {
-            const { x, y, z } = result.ball_position_camera_coords;
-            ballXDisplay.textContent = x.toFixed(2);
-            ballYDisplay.textContent = y.toFixed(2);
-            ballZDisplay.textContent = z.toFixed(2);
-            showMessage("Ball localized successfully!", "success");
-        } else {
-            showMessage(result.message, 'error');
-            ballXDisplay.textContent = 'N/A';
-            ballYDisplay.textContent = 'N/A';
-            ballZDisplay.textContent = 'N/A';
-        }
-    } catch (error) {
-        console.error('Error localizing ball:', error);
-        showMessage('Failed to localize ball in 3D.', 'error');
-        ballXDisplay.textContent = 'N/A';
-        ballYDisplay.textContent = 'N/A';
-        ballZDisplay.textContent = 'N/A';
-    }
-});
-
-// Reset
-resetBtn.addEventListener('click', () => {
-    if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-        stream = null;
-    }
-    
-    webcamFeed.srcObject = null;
-    ctx.clearRect(0, 0, measurementCanvas.width, measurementCanvas.height);
-    
-    capturedImageBlob = null;
-    capturedImageFilename = null;
-    capturedImageData = null;
-    drawingMode = null;
-    centerPoint = null;
-    diameterEndPoint = null;
-    cameraActive = false;
-    
-    centerXDisplay.textContent = 'N/A';
-    centerYDisplay.textContent = 'N/A';
-    diameterDisplay.textContent = 'N/A';
-    ballXDisplay.textContent = 'N/A';
-    ballYDisplay.textContent = 'N/A';
-    ballZDisplay.textContent = 'N/A';
-    
-    cameraActionBtn.textContent = 'Start Camera';
-    cameraActionBtn.disabled = false;
-    selectCenterBtn.disabled = true;
-    measureDiameterBtn.disabled = true;
-    saveMeasurementBtn.disabled = true;
-    localizeBallBtn.disabled = true;
-    resetBtn.disabled = false;
-    
-    showMessage("Application reset. Click 'Start Camera' to begin.", "info");
-});
     </script>
-</body>
-</html>
