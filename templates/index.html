@@ -264,9 +264,15 @@ cameraActionBtn.addEventListener('click', async () => {
             cameraActionBtn.disabled = true;
             showMessage("Capturing image...", "info");
 
-            // Capture image
-            const photoBlob = await imageCapture.takePhoto();
-
+             const canvas = document.createElement('canvas');
+            canvas.width = webcamFeed.videoWidth;
+            canvas.height = webcamFeed.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(webcamFeed, 0, 0, canvas.width, canvas.height);
+            const photoBlob = await new Promise((resolve) => {
+                canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.95);
+            });
+            
             // Stop camera stream
             if (stream) {
                 stream.getTracks().forEach(track => track.stop());

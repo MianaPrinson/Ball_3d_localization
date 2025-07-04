@@ -25,13 +25,6 @@ client = MongoClient(MONGO_URI)
 db = client["ball_data"]  
 collection = db["camera_coordinates"]  
 
-'''UPLOAD_FOLDER = 'captured_images'
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)'''
-
-#app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -43,17 +36,10 @@ def upload_image():
         data = request.get_json()
         if 'image' not in data:
             return jsonify({'success': False, 'message': 'No image data provided.'}), 400
-
-        image_data_b64 = data['image'].split(',')[1] 
-        image_bytes = base64.b64decode(image_data_b64)
-
-        # Generate a unique filename using timestamp
-        '''timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f") 
-        filename = f"captured_image_{timestamp}.jpeg"
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-
-        with open(filepath, 'wb') as f:
-            f.write(image_bytes)'''
+        
+        image_data_b64 = data['image']
+        if ',' in image_data_b64:
+            image_data_b64 = image_data_b64.split(',')[1]
 
         return jsonify({'success': True, 'message': 'Image received (not saved).', 'filename': None}), 200
 
