@@ -16,17 +16,20 @@ dist_coord=np.array([[-0.00969174 , 0.18437321 ,-0.00503057, -0.00089529 ,-0.218
 app = Flask(__name__)
 
 load_dotenv()
+
 MONGO_URI = os.getenv("MONGO_URI")
+if not MONGO_URI:
+    raise ValueError("No MONGO_URI set in environment variables")
 
 client = MongoClient(MONGO_URI)
 db = client["ball_data"]  
 collection = db["camera_coordinates"]  
 
-UPLOAD_FOLDER = 'captured_images'
+'''UPLOAD_FOLDER = 'captured_images'
 if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
+    os.makedirs(UPLOAD_FOLDER)'''
 
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+#app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
 @app.route('/')
@@ -36,7 +39,7 @@ def index():
 @app.route('/upload_image', methods=['POST'])
 def upload_image():
 
-    try:
+    try:                        
         data = request.get_json()
         if 'image' not in data:
             return jsonify({'success': False, 'message': 'No image data provided.'}), 400
@@ -45,14 +48,14 @@ def upload_image():
         image_bytes = base64.b64decode(image_data_b64)
 
         # Generate a unique filename using timestamp
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f") # Added microseconds for more uniqueness
+        '''timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f") 
         filename = f"captured_image_{timestamp}.jpeg"
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
 
         with open(filepath, 'wb') as f:
-            f.write(image_bytes)
+            f.write(image_bytes)'''
 
-        return jsonify({'success': True, 'message': f'Image saved as {filename}', 'filename': filename}), 200
+        return jsonify({'success': True, 'message': 'Image received (not saved).', 'filename': None}), 200
 
     except Exception as e:
         print(f"Error uploading image: {e}")
