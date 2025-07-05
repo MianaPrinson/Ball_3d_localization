@@ -197,7 +197,6 @@
 cameraActionBtn.addEventListener('click', async () => {
     if (!cameraActive) {
         try {
-            // Clear previous stream if exists
             if (stream) {
                 stream.getTracks().forEach(track => track.stop());
                 stream = null;
@@ -481,45 +480,49 @@ cameraActionBtn.addEventListener('click', async () => {
         });
 
         // Localize Ball (3D)
-        localizeBallBtn.addEventListener('click', async () => {
-            if (!centerPoint || diameterDisplay.textContent === 'N/A') {
-                showMessage("Please select ball center and measure diameter first.", "error");
-                return;
-            }
+       localizeBallBtn.addEventListener('click', async () => {
+    if (!centerPoint || diameterDisplay.textContent === 'N/A') {
+        showMessage("Please select ball center and measure diameter first.", "error");
+        return;
+    }
 
-            const centerX = Math.round(centerPoint.x);
-            const centerY = Math.round(centerPoint.y);
-            const diameter = parseFloat(diameterDisplay.textContent);
+    const centerX = Math.round(centerPoint.x);
+    const centerY = Math.round(centerPoint.y);
+    const diameter = parseFloat(diameterDisplay.textContent);
 
-            try {
-                showMessage("Localizing ball in 3D...", "info");
-                
-                // Simulate 3D localization
-                setTimeout(() => {
-                    const mockResult = {
-                        success: true,
-                        ball_position_camera_coords: {
-                            x: Math.random() * 10 - 5,
-                            y: Math.random() * 10 - 5,
-                            z: Math.random() * 20 + 10
-                        }
-                    };
-                    
-                    if (mockResult.success) {
-                        const { x, y, z } = mockResult.ball_position_camera_coords;
-                        updateDataDisplay(ballXDisplay, x.toFixed(2));
-                        updateDataDisplay(ballYDisplay, y.toFixed(2));
-                        updateDataDisplay(ballZDisplay, z.toFixed(2));
-                        showMessage("Ball localized successfully!", "success");
-                    }
-                }, 1500);
-                
-            } catch (error) {
-                console.error('Error localizing ball:', error);
-                showMessage('Failed to localize ball in 3D.', 'error');
-            }
+    try {
+        showMessage("Localizing ball in 3D...", "info");
+        
+        // Make the actual API call to your backend
+        const response = await fetch('/ball_localization', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                centerX: centerX,
+                centerY: centerY,
+                diameter: diameter
+            })
         });
 
+        const data = await response.json();
+        
+        if (data.success) {
+            const { x, y, z } = data.ball_position_camera_coords;
+            updateDataDisplay(ballXDisplay, x.toFixed(2));
+            updateDataDisplay(ballYDisplay, y.toFixed(2));
+            updateDataDisplay(ballZDisplay, z.toFixed(2));
+            showMessage("Ball localized successfully!", "success");
+        } else {
+            showMessage(data.message || "Failed to localize ball", "error");
+        }
+        
+    } catch (error) {
+        console.error('Error localizing ball:', error);
+        showMessage('Failed to localize ball in 3D.', 'error');
+    }
+});
         // Reset
         resetBtn.addEventListener('click', () => {
             if (stream) {
