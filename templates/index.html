@@ -62,10 +62,6 @@
                     <i class="fas fa-ruler"></i> Measure Diameter
                 </button>
                 
-                <button id="saveMeasurementBtn" class="btn btn-success" disabled>
-                    <i class="fas fa-save"></i> Save Measurement
-                </button>
-                
                 <button id="localizeBallBtn" class="btn btn-warning" disabled>
                     <i class="fas fa-cube"></i> Localize Ball (3D)
                 </button>
@@ -120,7 +116,6 @@
         const cameraActionBtn = document.getElementById('cameraActionBtn');
         const selectCenterBtn = document.getElementById('selectCenterBtn');
         const measureDiameterBtn = document.getElementById('measureDiameterBtn');
-        const saveMeasurementBtn = document.getElementById('saveMeasurementBtn');
         const localizeBallBtn = document.getElementById('localizeBallBtn');
         const resetBtn = document.getElementById('resetBtn');
 
@@ -229,8 +224,6 @@ cameraActionBtn.addEventListener('click', async () => {
             
             // Disable other buttons until capture is done
             selectCenterBtn.disabled = true;
-            measureDiameterBtn.disabled = true;
-            saveMeasurementBtn.disabled = true;
             localizeBallBtn.disabled = true;
 
             showMessage("Camera started. Click 'Capture Image' to take a photo.", "info");
@@ -394,7 +387,6 @@ cameraActionBtn.addEventListener('click', async () => {
                     drawCanvas();
                     drawingMode = null;
                     
-                    saveMeasurementBtn.disabled = false;
                     localizeBallBtn.disabled = false;
                     updateStepIndicator(4);
                     showMessage("Diameter measured! You can now save or localize the ball.", "success");
@@ -451,34 +443,6 @@ cameraActionBtn.addEventListener('click', async () => {
             }
         }
 
-        // Save Measurement
-        saveMeasurementBtn.addEventListener('click', async () => {
-            if (!centerPoint || diameterDisplay.textContent === 'N/A' || !capturedImageFilename) {
-                showMessage("Please complete all measurements first.", "error");
-                return;
-            }
-
-            const diameter = parseFloat(diameterDisplay.textContent);
-            const ballX = ballXDisplay.textContent === 'N/A' ? null : parseFloat(ballXDisplay.textContent);
-            const ballY = ballYDisplay.textContent === 'N/A' ? null : parseFloat(ballYDisplay.textContent);
-            const ballZ = ballZDisplay.textContent === 'N/A' ? null : parseFloat(ballZDisplay.textContent);
-
-            try {
-                // Simulate API call
-                showMessage("Saving measurement...", "info");
-                
-                // Replace with actual API call
-                setTimeout(() => {
-                    showMessage("Measurement saved successfully!", "success");
-                    saveMeasurementBtn.disabled = true;
-                }, 1000);
-                
-            } catch (error) {
-                console.error('Error saving measurement:', error);
-                showMessage('Failed to save measurement.', 'error');
-            }
-        });
-
         // Localize Ball (3D)
        localizeBallBtn.addEventListener('click', async () => {
     if (!centerPoint || diameterDisplay.textContent === 'N/A') {
@@ -493,7 +457,6 @@ cameraActionBtn.addEventListener('click', async () => {
     try {
         showMessage("Localizing ball in 3D...", "info");
         
-        // Make the actual API call to your backend
         const response = await fetch('/ball_localization', {
             method: 'POST',
             headers: {
@@ -523,6 +486,8 @@ cameraActionBtn.addEventListener('click', async () => {
         showMessage('Failed to localize ball in 3D.', 'error');
     }
 });
+
+
         // Reset
         resetBtn.addEventListener('click', () => {
             if (stream) {
@@ -558,7 +523,6 @@ cameraActionBtn.addEventListener('click', async () => {
             cameraActionBtn.disabled = false;
             selectCenterBtn.disabled = true;
             measureDiameterBtn.disabled = true;
-            saveMeasurementBtn.disabled = true;
             localizeBallBtn.disabled = true;
             
             updateStepIndicator(1);

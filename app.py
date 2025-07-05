@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 K=np.array([[2.99443089e+03 ,0.00000000e+00 ,1.51490971e+03],
             [0.00000000e+00 ,2.99529407e+03 ,1.91193177e+03],
             [0.00000000e+00, 0.00000000e+00 ,1.00000000e+00]])
+
 dist_coord=np.array([[-0.00969174 , 0.18437321 ,-0.00503057, -0.00089529 ,-0.21888757]])
 
 app = Flask(__name__)
@@ -66,6 +67,7 @@ def localization():
         center_x = data.get('centerX')
         center_y = data.get('centerY')
         diameter = data.get('diameter')
+        image_filename = data.get('imageFilename')
         
 
         if any(v is None for v in [center_x, center_y, diameter]):
@@ -91,49 +93,32 @@ def localization():
         ball_z_camera = scaled_bc[2, 0]
 
 
+        db_entry = {
+            "type": "measurement",
+            "timestamp": datetime.datetime.now().isoformat(),
+            "image_filename": image_filename,
+            "pixel_coordinates": [center_x, center_y],
+            "diameter": diameter,
+            "ball_coordinates": [ball_x_camera, ball_y_camera, ball_z_camera]
+        }
+        
+        result = collection.insert_one(db_entry)
+        saved_id = str(result.inserted_id)
+
         return jsonify({
             'success': True,
-            'message': 'Ball localized successfully',
+            'message': 'Ball localized and saved successfully',
             'ball_position_camera_coords': {
                 'x': ball_x_camera,
                 'y': ball_y_camera,
                 'z': ball_z_camera
-            }
+            },
         }), 200
+      
 
     except Exception as e:
         print(f"Error in localization: {e}")
-        return jsonify({'success': False, 'message': f'Server error: {str(e)}'}), 500
-    
-@app.route('/save_measurement', methods=['POST'])
-def save_measurement():
-    try:
-        data = request.get_json()
-        center_x = data.get('centerX')
-        center_y = data.get('centerY')
-        diameter = data.get('diameter')
-        image_filename = data.get('imageFilename')
-        x_camera=data.get('ball_x_camera')
-        y_camera=data.get('ball_y_camera')
-        z_camera=data.get('ball_z_camera')
-
-
-        if None in [center_x, center_y, diameter, image_filename, x_camera, y_camera, z_camera]:
-            return jsonify({'success': False, 'message': 'Missing measurement or localization data.'}), 400
-
-    
-        collection.insert_one({
-        "type": "measurement",
-        "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "pixel_coordinates": [center_x, center_y],
-        "diameter": diameter,
-        "ball_coordinates": [x_camera,y_camera, z_camera]
-})
-        return jsonify({'success': True, 'message': 'Measurement saved to MongoDB successfully!'}), 200
-
-    except Exception as e:
-        print(f"Error saving measurement: {e}")
-        return jsonify({'success': False, 'message': f'Server error: {str(e)}'}), 500
+        return jsonify({'success': False, 'message': f'Server error: {str(e)}'}), 500    
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
