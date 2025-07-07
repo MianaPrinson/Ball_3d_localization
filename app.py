@@ -15,7 +15,6 @@ K=np.array([[2.99443089e+03 ,0.00000000e+00 ,1.51490971e+03],
 dist_coord=np.array([[-0.00969174 , 0.18437321 ,-0.00503057, -0.00089529 ,-0.21888757]])
 
 app = Flask(__name__)
-
 load_dotenv()
 
 MONGO_URI = os.getenv("MONGO_URI")
@@ -109,7 +108,7 @@ def localization():
             "diameter": diameter,
             "ball_coordinates": [ball_x_camera, ball_y_camera, ball_z_camera]
         }
-        
+        print(db_entry)
         result = collection.insert_one(db_entry)
         saved_id = str(result.inserted_id)
 
