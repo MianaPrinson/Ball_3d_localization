@@ -8,16 +8,6 @@ import json
 from pymongo import MongoClient
 from dotenv import load_dotenv
 
-uri = "mongodb+srv://tcr22ec025:tcr22ec025@cluster0.xya5ynd.mongodb.net/?retryWrite=true&w=majority&appName=Cluster0"
-client = MongoClient(uri)
-
-# Test the connection
-try:
-    client.admin.command('ping')
-    print("Successfully connected to MongoDB!")
-except Exception as e:
-    print(f"Connection failed: {e}")
-
 K=np.array([[2.99443089e+03 ,0.00000000e+00 ,1.51490971e+03],
             [0.00000000e+00 ,2.99529407e+03 ,1.91193177e+03],
             [0.00000000e+00, 0.00000000e+00 ,1.00000000e+00]])
@@ -35,6 +25,14 @@ if not MONGO_URI:
 client = MongoClient(MONGO_URI)
 db = client["ball_data"]  
 collection = db["camera_coordinates"]  
+
+
+try:
+    client.admin.command('ping')
+    print("Successfully connected to MongoDB!")
+except Exception as e:
+    print(f"Connection failed: {e}")
+    
 
 @app.route('/')
 def index():
