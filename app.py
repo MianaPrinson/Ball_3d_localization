@@ -26,13 +26,13 @@ client = MongoClient(MONGO_URI)
 db = client["ball_data"]  
 collection = db["camera_coordinates"]  
 
-
 try:
     client.admin.command('ping')
-    print("Successfully connected to MongoDB!")
+    print("✅ Successfully connected to MongoDB!")
+    print("Available databases:", client.list_database_names())
 except Exception as e:
-    print(f"Connection failed: {e}")
-    
+    print(f"❌ Connection failed: {e}")
+
 
 @app.route('/')
 def index():
