@@ -9,7 +9,7 @@ from pymongo import MongoClient
 from dotenv import load_dotenv
 from pymongo.errors import ConnectionFailure, ConfigurationError
 
-K=np.array([[2.99443089e+03 ,0.00000000e+00 ,1.51490971e+03],
+K_original=np.array([[2.99443089e+03 ,0.00000000e+00 ,1.51490971e+03],
             [0.00000000e+00 ,2.99529407e+03 ,1.91193177e+03],
             [0.00000000e+00, 0.00000000e+00 ,1.00000000e+00]])
 
@@ -27,7 +27,7 @@ S = np.array([
     [0, 0, 1]
 ])
 
-K= np.matmul(S, K)
+K_scaled= np.matmul(S, K_original)
 
 app = Flask(__name__)
 load_dotenv()
@@ -38,8 +38,6 @@ if not MONGO_URI:
 
 try:
     client = MongoClient(MONGO_URI)
-    # Optional: Ping the server to verify connection immediately
-    client.admin.command('ping')
     db = client["ball_data"]
     collection = db["camera_coordinates"]
     print("MongoDB connection established successfully.")
@@ -106,13 +104,13 @@ def localization():
         if diameter <= 0:
             return jsonify({'success': False, 'message': 'Diameter must be positive'}), 400
 
-        focal = (K[0, 0] + K[1, 1]) / 2
-        phi = 6.46 
+        focal = (K_scaled[0, 0] + K_scaled[1, 1]) / 2
+        ball_dia_true = 6.46 
 
-        scaling_factor = (phi * focal) / diameter
-        k_inv = np.linalg.inv(K)
+        scaling_factor = (ball_dia_true * focal) / diameter
+        k_inv = np.linalg.inv(K_scaled)
         pcoord = np.array([center_x, center_y])
-        undist_pcoord = rectify_point(pcoord, K, dist_coord)
+        undist_pcoord = rectify_point(pcoord, K_scaled, dist_coord)
         rec_pcoord = np.append(undist_pcoord, [1]).reshape(3, 1)
         b_c = np.matmul(k_inv, rec_pcoord)
         scaled_bc = scaling_factor * b_c
