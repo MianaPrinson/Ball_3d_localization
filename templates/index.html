@@ -195,17 +195,21 @@ cameraActionBtn.addEventListener('click', async () => {
                 stream.getTracks().forEach(track => track.stop());
                 stream = null;
             }
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter(device => device.kind === 'videoinput');
 
             stream = await navigator.mediaDevices.getUserMedia({
                 video: {
                     facingMode: "environment",
-                    width: { exact: 1280 },
-                    height: { exact: 720 }
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
                 },
                 audio: false
             });
-
-            // Setup video element
+            const track = stream.getVideoTracks()[0];
+            const settings = track.getSettings();
+            console.log(`Actual resolution: ${settings.width}x${settings.height}`);
+                        // Setup video element
             webcamFeed.srcObject = stream;
             videoPlaceholder.style.display = 'none';
             webcamFeed.style.display = 'block';
