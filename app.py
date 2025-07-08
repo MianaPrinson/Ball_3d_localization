@@ -7,12 +7,27 @@ import datetime
 import json 
 from pymongo import MongoClient
 from dotenv import load_dotenv
+from pymongo.errors import ConnectionFailure, ConfigurationError
 
 K=np.array([[2.99443089e+03 ,0.00000000e+00 ,1.51490971e+03],
             [0.00000000e+00 ,2.99529407e+03 ,1.91193177e+03],
             [0.00000000e+00, 0.00000000e+00 ,1.00000000e+00]])
 
 dist_coord=np.array([[-0.00969174 , 0.18437321 ,-0.00503057, -0.00089529 ,-0.21888757]])
+W_orig, H_orig = 3000, 4000
+W_new, H_new = 1280, 720
+
+sx = W_new / W_orig
+sy = H_new / H_orig
+
+#Scaling matrix
+S = np.array([
+    [sx, 0, 0],
+    [0, sy, 0],
+    [0, 0, 1]
+])
+
+K= np.matmul(S, K)
 
 app = Flask(__name__)
 load_dotenv()
@@ -21,17 +36,24 @@ MONGO_URI = os.getenv("MONGO_URI")
 if not MONGO_URI:
     raise ValueError("No MONGO_URI set in environment variables")
 
-client = MongoClient(MONGO_URI)
-db = client["ball_data"]  
-collection = db["camera_coordinates"]  
-
 try:
+    client = MongoClient(MONGO_URI)
+    # Optional: Ping the server to verify connection immediately
     client.admin.command('ping')
-    print("✅ Successfully connected to MongoDB!")
-    print("Available databases:", client.list_database_names())
+    db = client["ball_data"]
+    collection = db["camera_coordinates"]
+    print("MongoDB connection established successfully.")
+except (ConnectionFailure, ConfigurationError) as e:
+    print(f"Failed to connect to MongoDB: {e}")
+    # Log the full traceback for debugging in production logs
+    import traceback
+    traceback.print_exc()
+    raise # Re-raise the exception to stop application startup if essential
 except Exception as e:
-    print(f"❌ Connection failed: {e}")
-
+    print(f"An unexpected error occurred during MongoDB connection: {e}")
+    import traceback
+    traceback.print_exc()
+    raise
 
 @app.route('/')
 def index():
