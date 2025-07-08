@@ -372,5 +372,5 @@
         }
 
         .step-indicator {
-    visibility: hidden;
+    visibility: none;
 }
