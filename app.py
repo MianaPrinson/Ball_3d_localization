@@ -147,5 +147,10 @@ def localization():
         print(f"Error in localization: {e}")
         return jsonify({'success': False, 'message': f'Server error: {str(e)}'}), 500    
 
+
+@app.route('/results', methods=['POST'])
+def results():
+    return render_template('result.html')
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

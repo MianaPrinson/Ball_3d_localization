@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ball Localization Results</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+   <link rel="stylesheet" href="/static/style.css">
+   
+</head>
+<body>
+    <div class="container">
+     <div class="data-display">
+                    <h4><i class="fas fa-chart-line"></i> Measurements</h4>
+                    <div class="data-grid">
+                        <div class="data-item">
+                            <span class="data-label">Center X</span>
+                            <span class="data-value" id="centerXDisplay">N/A</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Center Y</span>
+                            <span class="data-value" id="centerYDisplay">N/A</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Diameter</span>
+                            <span class="data-value" id="diameterDisplay">N/A</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Ball X (cm)</span>
+                            <span class="data-value" id="ballXDisplay">N/A</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Ball Y (cm)</span>
+                            <span class="data-value" id="ballYDisplay">N/A</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">Ball Z (cm)</span>
+                            <span class="data-value" id="ballZDisplay">N/A</span>
+                        </div>
+            </div>  
+            <div class="controls-section">
+                 <button id="backToAppBtn" class="btn btn-danger">
+                    <i class="fas fa-redo"></i> Back to App
+                </button>
+            </div>          
+        </div>
+        <div class="message-box" id="messageBox"></div>
+    </div>
+
+
+    <script>
+        
+        const centerXDisplay = document.getElementById('centerXDisplay');
+        const centerYDisplay = document.getElementById('centerYDisplay');
+        const diameterDisplay = document.getElementById('diameterDisplay');
+        const ballXDisplay = document.getElementById('ballXDisplay');
+        const ballYDisplay = document.getElementById('ballYDisplay');
+        const ballZDisplay = document.getElementById('ballZDisplay');
+        const messageBox = document.getElementById('messageBox');
+        const backToAppBtn = document.getElementById('backToAppBtn');
+
+        function showMessage(message, type) {
+            messageBox.textContent = message;
+            messageBox.className = `message-box ${type}`;
+            messageBox.style.display = 'block';
+            // Optionally hide after a few seconds
+            setTimeout(() => {
+                messageBox.style.display = 'none';
+            }, 5000);
+        }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    try {
+        // Retrieve the stored data from localStorage
+        const storedData = localStorage.getItem('localizationResult');
+        if (storedData) {
+            const result = JSON.parse(storedData);
+            const { centerX, centerY, diameter, x, y, z } = result;
+
+            centerXDisplay.textContent = centerX ?? 'N/A';
+            centerYDisplay.textContent = centerY ?? 'N/A';
+            diameterDisplay.textContent = diameter ?? 'N/A';
+            ballXDisplay.textContent = x ?? 'N/A';
+            ballYDisplay.textContent = y ?? 'N/A';
+            ballZDisplay.textContent = z ?? 'N/A';
+        } else {
+            showMessage("No localization data found for this image.", "error");
+        }
+    } catch (error) {
+        console.error("Error fetching localization data:", error);
+        showMessage(`Error fetching data: ${error.message}`, "error");
+    }
+});
+        backToAppBtn.addEventListener('click', () => {
+            window.location.href = '/'; 
+        });
+    </script>
+</body>
+</html>

@@ -50,36 +50,11 @@
                     <i class="fas fa-redo"></i> Reset
                 </button>
 
-                <div class="data-display">
-                    <h4><i class="fas fa-chart-line"></i> Measurements</h4>
-                    <div class="data-grid">
-                        <div class="data-item">
-                            <span class="data-label">Center X</span>
-                            <span class="data-value" id="centerXDisplay">N/A</span>
-                        </div>
-                        <div class="data-item">
-                            <span class="data-label">Center Y</span>
-                            <span class="data-value" id="centerYDisplay">N/A</span>
-                        </div>
-                        <div class="data-item">
-                            <span class="data-label">Diameter</span>
-                            <span class="data-value" id="diameterDisplay">N/A</span>
-                        </div>
-                        <div class="data-item">
-                            <span class="data-label">Ball X (cm)</span>
-                            <span class="data-value" id="ballXDisplay">N/A</span>
-                        </div>
-                        <div class="data-item">
-                            <span class="data-label">Ball Y (cm)</span>
-                            <span class="data-value" id="ballYDisplay">N/A</span>
-                        </div>
-                        <div class="data-item">
-                            <span class="data-label">Ball Z (cm)</span>
-                            <span class="data-value" id="ballZDisplay">N/A</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                <button id="downloadBtn" class="btn btn-info" disabled>
+                    <i class="fas fa-download"></i> Download Image
+                </button>
+
+             </div>
         </div>
     </div>
 
@@ -98,24 +73,18 @@
         const measureDiameterBtn = document.getElementById('measureDiameterBtn');
         const localizeBallBtn = document.getElementById('localizeBallBtn');
         const resetBtn = document.getElementById('resetBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
 
-        const centerXDisplay = document.getElementById('centerXDisplay');
-        const centerYDisplay = document.getElementById('centerYDisplay');
-        const diameterDisplay = document.getElementById('diameterDisplay');
-        const ballXDisplay = document.getElementById('ballXDisplay');
-        const ballYDisplay = document.getElementById('ballYDisplay');
-        const ballZDisplay = document.getElementById('ballZDisplay');
-        const messageBox = document.getElementById('messageBox');
 
         let stream=null;
         let capturedImageBlob = null;
         let capturedImageFilename = null;
         let drawingMode = null;
         let centerPoint = null;
+        let diameter = null;
         let diameterEndPoint = null;
         let cameraActive = false;
         let capturedImageData = null;
-        let currentStep = 1;
         let imageCapture = null; 
 
         
@@ -153,8 +122,57 @@
     }
 }
 
-        // Initial setup
-        statusIndicator.classList.remove('active');
+ // Draw function
+        function drawCanvas() {
+            ctx.clearRect(0, 0, measurementCanvas.width, measurementCanvas.height);
+
+            if (capturedImageData) {
+                ctx.putImageData(capturedImageData, 0, 0);
+                drawMeasurements();
+            }
+        }
+
+        // Draw measurements
+        function drawMeasurements() {
+            if (centerPoint) {
+                // Draw center point
+                ctx.beginPath();
+                ctx.arc(centerPoint.x, centerPoint.y, 8, 0, Math.PI * 2);
+                ctx.fillStyle = '#ef4444';
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                ctx.closePath();
+
+                if (diameterEndPoint) {
+                    const radius = Math.sqrt(
+                        Math.pow(diameterEndPoint.x - centerPoint.x, 2) +
+                        Math.pow(diameterEndPoint.y - centerPoint.y, 2)
+                    );
+                    
+                    // Draw diameter circle
+                    ctx.beginPath();
+                    ctx.arc(centerPoint.x, centerPoint.y, radius, 0, Math.PI * 2);
+                    ctx.strokeStyle = '#10b981';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                    ctx.closePath();
+
+                    // Draw diameter line
+                    ctx.beginPath();
+                    ctx.moveTo(centerPoint.x, centerPoint.y);
+                    ctx.lineTo(diameterEndPoint.x, diameterEndPoint.y);
+                    ctx.strokeStyle = '#f59e0b';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    ctx.closePath();
+                }
+            }
+        }
+
+// Initial setup
+statusIndicator.classList.remove('active');
 
 cameraActionBtn.addEventListener('click', async () => {
     if (!cameraActive) {
@@ -194,6 +212,7 @@ cameraActionBtn.addEventListener('click', async () => {
             // Disable other buttons until capture is done
             selectCenterBtn.disabled = true;
             localizeBallBtn.disabled = true;
+            downloadBtn.disabled = true;
 
             showMessage("Camera started. Click 'Capture Image' to take a photo.", "info");
 
@@ -281,6 +300,18 @@ cameraActionBtn.addEventListener('click', async () => {
                 cameraActionBtn.innerHTML = '<i class="fas fa-camera"></i> Start Camera';
                 cameraActionBtn.disabled = false;
                 selectCenterBtn.disabled = false;
+                
+
+
+        downloadBtn.addEventListener('click', () => {
+            if (capturedImageBlob) {
+                const filename = `ball_capture_${Date.now()}.jpeg`;
+                downloadImage(capturedImageBlob, filename);
+            } else {
+                showMessage("No image to download.", "error");
+            }
+        }, { once: true });
+
             } else {
                 throw new Error(result.message || "Failed to save image");
             }
@@ -337,8 +368,6 @@ cameraActionBtn.addEventListener('click', async () => {
 
             if (drawingMode === 'center') {
                 centerPoint = { x: actualX, y: actualY };
-                updateDataDisplay(centerXDisplay, Math.round(actualX));
-                updateDataDisplay(centerYDisplay, Math.round(actualY));
                 drawCanvas();
                 drawingMode = null;
                 
@@ -352,76 +381,30 @@ cameraActionBtn.addEventListener('click', async () => {
                         Math.pow(diameterEndPoint.x - centerPoint.x, 2) +
                         Math.pow(diameterEndPoint.y - centerPoint.y, 2)
                     );
-                    const diameter = radius * 2;
-                    updateDataDisplay(diameterDisplay, Math.round(diameter));
+
+                    diameter = radius * 2;
                     drawCanvas();
                     drawingMode = null;
                     
+                    downloadBtn.disabled = false;
                     localizeBallBtn.disabled = false;
+
                     showMessage("Diameter measured! You can now save or localize the ball.", "success");
                 }
             }
         });
 
-        // Draw function
-        function drawCanvas() {
-            ctx.clearRect(0, 0, measurementCanvas.width, measurementCanvas.height);
-
-            if (capturedImageData) {
-                ctx.putImageData(capturedImageData, 0, 0);
-                drawMeasurements();
-            }
-        }
-
-        // Draw measurements
-        function drawMeasurements() {
-            if (centerPoint) {
-                // Draw center point
-                ctx.beginPath();
-                ctx.arc(centerPoint.x, centerPoint.y, 8, 0, Math.PI * 2);
-                ctx.fillStyle = '#ef4444';
-                ctx.fill();
-                ctx.strokeStyle = '#ffffff';
-                ctx.lineWidth = 3;
-                ctx.stroke();
-                ctx.closePath();
-
-                if (diameterEndPoint) {
-                    const radius = Math.sqrt(
-                        Math.pow(diameterEndPoint.x - centerPoint.x, 2) +
-                        Math.pow(diameterEndPoint.y - centerPoint.y, 2)
-                    );
-                    
-                    // Draw diameter circle
-                    ctx.beginPath();
-                    ctx.arc(centerPoint.x, centerPoint.y, radius, 0, Math.PI * 2);
-                    ctx.strokeStyle = '#10b981';
-                    ctx.lineWidth = 3;
-                    ctx.stroke();
-                    ctx.closePath();
-
-                    // Draw diameter line
-                    ctx.beginPath();
-                    ctx.moveTo(centerPoint.x, centerPoint.y);
-                    ctx.lineTo(diameterEndPoint.x, diameterEndPoint.y);
-                    ctx.strokeStyle = '#f59e0b';
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
-                    ctx.closePath();
-                }
-            }
-        }
-
-        // Localize Ball (3D)
+       
+    // Localize Ball (3D)
     localizeBallBtn.addEventListener('click', async () => {
-    if (!centerPoint || diameterDisplay.textContent === 'N/A') {
+    if (!centerPoint || !diameter) {
         showMessage("Please select ball center and measure diameter first.", "error");
         return;
     }
 
     const centerX = Math.round(centerPoint.x);
     const centerY = Math.round(centerPoint.y);
-    const diameter = parseFloat(diameterDisplay.textContent);
+    
 
     try {
         showMessage("Localizing ball in 3D...", "info");
@@ -440,22 +423,23 @@ cameraActionBtn.addEventListener('click', async () => {
 
         const data = await response.json();
         
-        if (data.success) {
-            const { x, y, z } = data.ball_position_camera_coords;
-            updateDataDisplay(ballXDisplay, x.toFixed(2));
-            updateDataDisplay(ballYDisplay, y.toFixed(2));
-            updateDataDisplay(ballZDisplay, z.toFixed(2));
-            showMessage("Ball localized successfully!", "success");
-        } else {
-            showMessage(data.message || "Failed to localize ball", "error");
-        }
-        
+       if (data.success) {
+    const { x, y, z } = data.ball_position_camera_coords;
+    localStorage.setItem('localizationResult', JSON.stringify({
+        centerX,
+        centerY,
+        diameter,
+        x,
+        y,
+        z
+    }));
+    window.location.href = '/result.html';
+} 
     } catch (error) {
         console.error('Error localizing ball:', error);
         showMessage('Failed to localize ball in 3D.', 'error');
     }
 });
-
 
         // Reset
         resetBtn.addEventListener('click', () => {
@@ -481,18 +465,12 @@ cameraActionBtn.addEventListener('click', async () => {
             diameterEndPoint = null;
             cameraActive = false;
             
-            updateDataDisplay(centerXDisplay, 'N/A');
-            updateDataDisplay(centerYDisplay, 'N/A');
-            updateDataDisplay(diameterDisplay, 'N/A');
-            updateDataDisplay(ballXDisplay, 'N/A');
-            updateDataDisplay(ballYDisplay, 'N/A');
-            updateDataDisplay(ballZDisplay, 'N/A');
-            
             cameraActionBtn.innerHTML = '<i class="fas fa-camera"></i> Start Camera';
             cameraActionBtn.disabled = false;
             selectCenterBtn.disabled = true;
             measureDiameterBtn.disabled = true;
             localizeBallBtn.disabled = true;
+            downloadBtn.disabled = true;
             
             showMessage("Application reset successfully!", "info");
         });
