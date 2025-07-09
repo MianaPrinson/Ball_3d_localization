@@ -218,8 +218,7 @@ cameraActionBtn.addEventListener('click', async () => {
             statusIndicator.classList.add('active');
 
             // Initialize ImageCapture
-            const videoTrack = stream.getVideoTracks()[0];
-            imageCapture = new ImageCapture(videoTrack);
+            imageCapture = new ImageCapture(track);
 
             // Update UI immediately
             cameraActionBtn.innerHTML = '<i class="fas fa-camera"></i> Capture Image';
@@ -259,7 +258,7 @@ cameraActionBtn.addEventListener('click', async () => {
             cameraActionBtn.disabled = true;
             showMessage("Capturing image...", "info");
 
-             const canvas = document.createElement('canvas');
+            const canvas = document.createElement('canvas');
             canvas.width = webcamFeed.videoWidth;
             canvas.height = webcamFeed.videoHeight;
             const ctx = canvas.getContext('2d');
