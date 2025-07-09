@@ -15,7 +15,7 @@ K_original=np.array([[2.99443089e+03 ,0.00000000e+00 ,1.51490971e+03],
 
 dist_coord=np.array([[-0.00969174 , 0.18437321 ,-0.00503057, -0.00089529 ,-0.21888757]])
 W_orig, H_orig = 3000, 4000
-W_new, H_new = 720,1280
+W_new, H_new = 1280,720
 
 sx = W_new / W_orig
 sy = H_new / H_orig
