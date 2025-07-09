@@ -201,8 +201,8 @@ cameraActionBtn.addEventListener('click', async () => {
             stream = await navigator.mediaDevices.getUserMedia({
                 video: {
                     facingMode: "environment",
-                    width: { ideal: 3000 },
-                    height: { ideal: 4000 }
+                    width: { exact: 3000 },
+                    height: { exact: 4000 }
                 },
                 audio: false
             });
