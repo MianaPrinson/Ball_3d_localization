@@ -193,7 +193,10 @@
             background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
             color: white;
         }
-
+        .btn-info {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+}
         .data-display {
             background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
             border-radius: 12px;
@@ -292,15 +295,15 @@
             100% { transform: scale(1); opacity: 1; }
         }
 
-         @media (min-width: 769px) {
+        @media (min-width: 769px) {
             .results-section {
-                flex-direction: row;
-                flex-wrap: wrap;
-                justify-content: center;
+                flex-direction: column;
+                flex-wrap: nowrap;
+                justify-content: flex-start;
             }
             .data-card {
-                flex: 1 1 calc(50% - 20px); /* Two cards per row with gap */
-                max-width: calc(50% - 20px);
+                flex: 1 1 100%;
+                max-width: 100%;
             }
         }
         @media (max-width: 768px) {
