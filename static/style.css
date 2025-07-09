@@ -302,32 +302,6 @@
             100% { transform: scale(1); opacity: 1; }
         }
 
-        .step-indicator {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 30px;
-            background: #f8fafc;
-            padding: 15px;
-            border-radius: 12px;
-        }
-
-        .step {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: #64748b;
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-
-        .step.active {
-            color: #4f46e5;
-        }
-
-        .step.completed {
-            color: #10b981;
-        }
-
         .step-number {
             width: 24px;
             height: 24px;
@@ -338,16 +312,6 @@
             justify-content: center;
             font-size: 0.8rem;
             font-weight: 700;
-        }
-
-        .step.active .step-number {
-            background: #4f46e5;
-            color: white;
-        }
-
-        .step.completed .step-number {
-            background: #10b981;
-            color: white;
         }
 
         @media (max-width: 768px) {
@@ -365,12 +329,4 @@
                 grid-template-columns: 1fr;
             }
 
-            .step-indicator {
-                flex-direction: column;
-                gap: 10px;
-            }
-        }
-
-        .step-indicator {
-    visibility: none;
 }

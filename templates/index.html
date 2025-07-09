@@ -16,25 +16,6 @@
 
         <div class="main-content">
             <div class="video-section">
-                <div class="step-indicator">
-                    <div class="step" id="step1">
-                        <div class="step-number">1</div>
-                        <span>Capture</span>
-                    </div>
-                    <div class="step" id="step2">
-                        <div class="step-number">2</div>
-                        <span>Center</span>
-                    </div>
-                    <div class="step" id="step3">
-                        <div class="step-number">3</div>
-                        <span>Measure</span>
-                    </div>
-                    <div class="step" id="step4">
-                        <div class="step-number">4</div>
-                        <span>Localize</span>
-                    </div>
-                </div>
-
                 <div class="video-container" id="videoContainer">
                     <div class="video-placeholder" id="videoPlaceholder">
                         <i class="fas fa-video"></i>
@@ -155,18 +136,6 @@
             }, 4000);
         }
 
-        function updateStepIndicator(step) {
-            currentStep = step;
-            for (let i = 1; i <= 4; i++) {
-                const stepElement = document.getElementById(`step${i}`);
-                stepElement.classList.remove('active', 'completed');
-                if (i < step) {
-                    stepElement.classList.add('completed');
-                } else if (i === step) {
-                    stepElement.classList.add('active');
-                }
-            }
-        }
 
         function updateDataDisplay(element, value) {
             element.textContent = value;
@@ -185,7 +154,6 @@
 }
 
         // Initial setup
-        updateStepIndicator(1);
         statusIndicator.classList.remove('active');
 
 cameraActionBtn.addEventListener('click', async () => {
@@ -208,8 +176,7 @@ cameraActionBtn.addEventListener('click', async () => {
             });
             const track = stream.getVideoTracks()[0];
             const settings = track.getSettings();
-            showMessage(`Actual resolution: ${settings.width}x${settings.height}`);
-        
+                    
             webcamFeed.srcObject = stream;
             videoPlaceholder.style.display = 'none';
             webcamFeed.style.display = 'block';
@@ -267,7 +234,7 @@ cameraActionBtn.addEventListener('click', async () => {
                 canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.95);
             });
 
-            // Log the actual resolution
+            
             showMessage(`Captured resolution: ${canvas.width}x${canvas.height}`);
 
             // Stop camera stream
@@ -314,7 +281,6 @@ cameraActionBtn.addEventListener('click', async () => {
                 cameraActionBtn.innerHTML = '<i class="fas fa-camera"></i> Start Camera';
                 cameraActionBtn.disabled = false;
                 selectCenterBtn.disabled = false;
-                updateStepIndicator(2);
             } else {
                 throw new Error(result.message || "Failed to save image");
             }
@@ -377,7 +343,6 @@ cameraActionBtn.addEventListener('click', async () => {
                 drawingMode = null;
                 
                 measureDiameterBtn.disabled = false;
-                updateStepIndicator(3);
                 showMessage("Center selected! Now measure the diameter.", "success");
                 
             } else if (drawingMode === 'diameter') {
@@ -393,7 +358,6 @@ cameraActionBtn.addEventListener('click', async () => {
                     drawingMode = null;
                     
                     localizeBallBtn.disabled = false;
-                    updateStepIndicator(4);
                     showMessage("Diameter measured! You can now save or localize the ball.", "success");
                 }
             }
@@ -530,7 +494,9 @@ cameraActionBtn.addEventListener('click', async () => {
             measureDiameterBtn.disabled = true;
             localizeBallBtn.disabled = true;
             
-            updateStepIndicator(1);
             showMessage("Application reset successfully!", "info");
         });
     </script>
+        
+    </body>
+</html>
