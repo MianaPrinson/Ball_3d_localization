@@ -104,13 +104,13 @@ def localization():
         if diameter <= 0:
             return jsonify({'success': False, 'message': 'Diameter must be positive'}), 400
 
-        focal = (K_scaled[0, 0] + K_scaled[1, 1]) / 2
+        focal = (K_original[0, 0] + K_original[1, 1]) / 2
         ball_dia_true = 6.46 
 
         scaling_factor = (ball_dia_true * focal) / diameter
-        k_inv = np.linalg.inv(K_scaled)
+        k_inv = np.linalg.inv(K_original)
         pcoord = np.array([center_x, center_y])
-        undist_pcoord = rectify_point(pcoord, K_scaled, dist_coord)
+        undist_pcoord = rectify_point(pcoord, K_original, dist_coord)
         rec_pcoord = np.append(undist_pcoord, [1]).reshape(3, 1)
         b_c = np.matmul(k_inv, rec_pcoord)
         scaled_bc = scaling_factor * b_c
