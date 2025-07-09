@@ -305,17 +305,34 @@
         }
         @media (max-width: 768px) {
             .container {
-                padding: 20px;
+                padding: 8px;
+                border-radius: 0;
+                box-shadow: none;
             }
             h1 {
-                font-size: 2rem;
+                font-size: 1.3rem;
             }
             .data-card {
                 flex: 1 1 100%;
+                max-width: 100%;
             }
-        }
-
+            .data-display {
+                padding: 12px;
+                margin-top: 10px;
+                border-radius: 8px;
+            }
             .data-grid {
                 grid-template-columns: 1fr;
+                gap: 10px;
             }
+            .data-item {
+                padding: 10px;
+                font-size: 0.95rem;
+            }
+            .btn {
+                padding: 12px 10px;
+                font-size: 0.95rem;
+                border-radius: 8px;
+            }
+        }
 
