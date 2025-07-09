@@ -270,10 +270,6 @@ cameraActionBtn.addEventListener('click', async () => {
             // Log the actual resolution
             console.log(`Captured resolution: ${canvas.width}x${canvas.height}`);
 
-            // Optional: Display it in your UI
-            document.getElementById('resolutionDisplay').textContent = 
-            `${canvas.width} × ${canvas.height}`;
-
             // Stop camera stream
             if (stream) {
                 stream.getTracks().forEach(track => track.stop());
