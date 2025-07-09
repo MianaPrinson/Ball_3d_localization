@@ -208,7 +208,7 @@ cameraActionBtn.addEventListener('click', async () => {
             });
             const track = stream.getVideoTracks()[0];
             const settings = track.getSettings();
-            console.log(`Actual resolution: ${settings.width}x${settings.height}`);
+            showMessage(`Actual resolution: ${settings.width}x${settings.height}`);
         
             webcamFeed.srcObject = stream;
             videoPlaceholder.style.display = 'none';
@@ -268,7 +268,7 @@ cameraActionBtn.addEventListener('click', async () => {
             });
 
             // Log the actual resolution
-            console.log(`Captured resolution: ${canvas.width}x${canvas.height}`);
+            showMessage(`Captured resolution: ${canvas.width}x${canvas.height}`);
 
             // Stop camera stream
             if (stream) {
