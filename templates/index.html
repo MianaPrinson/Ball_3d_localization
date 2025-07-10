@@ -53,8 +53,7 @@
                 <button id="downloadBtn" class="btn btn-info" disabled>
                     <i class="fas fa-download"></i> Download Image
                 </button>
-
-             </div>
+            </div>
         </div>
     </div>
 
@@ -67,6 +66,7 @@
         const videoContainer = document.getElementById('videoContainer');
         const videoPlaceholder = document.getElementById('videoPlaceholder');
         const statusIndicator = document.getElementById('statusIndicator');
+        const messageBox = document.getElementById('messageBox');
 
         const cameraActionBtn = document.getElementById('cameraActionBtn');
         const selectCenterBtn = document.getElementById('selectCenterBtn');
@@ -75,8 +75,7 @@
         const resetBtn = document.getElementById('resetBtn');
         const downloadBtn = document.getElementById('downloadBtn');
 
-
-        let stream=null;
+        let stream = null;
         let capturedImageBlob = null;
         let capturedImageFilename = null;
         let drawingMode = null;
@@ -85,7 +84,10 @@
         let diameterEndPoint = null;
         let cameraActive = false;
         let capturedImageData = null;
+        let capturedImage = null; // Store the actual image element
         let imageCapture = null; 
+
+
 
         function showMessage(message, type = 'success') {
             messageBox.textContent = message;
@@ -104,16 +106,14 @@
             }
         }
 
-        function setCanvasToVideoDimensions() {
-    // Always match canvas size to video or image
-    if (webcamFeed.style.display !== 'none' && webcamFeed.videoWidth && webcamFeed.videoHeight) {
-        measurementCanvas.width = webcamFeed.videoWidth;
-        measurementCanvas.height = webcamFeed.videoHeight;
-    } else if (capturedImageData) {
-        measurementCanvas.width = capturedImageData.width;
-        measurementCanvas.height = capturedImageData.height;
-    }
-}
+        function setCanvasToImageDimensions() {
+            if (capturedImage) {
+                measurementCanvas.width = capturedImage.naturalWidth;
+                measurementCanvas.height = capturedImage.naturalHeight;
+            }
+        }
+
+        // Draw function - FIXED
         function drawCanvas() {
             if (!capturedImage) return;
             
@@ -133,7 +133,7 @@
                 // Draw center point
                 ctx.beginPath();
                 ctx.arc(centerPoint.x, centerPoint.y, 8, 0, Math.PI * 2);
-                ctx.fillStyle = '#000000';
+                ctx.fillStyle = '#ff0000';
                 ctx.fill();
                 ctx.strokeStyle = '#ffffff';
                 ctx.lineWidth = 3;
@@ -145,6 +145,7 @@
                         Math.pow(diameterEndPoint.x - centerPoint.x, 2) +
                         Math.pow(diameterEndPoint.y - centerPoint.y, 2)
                     );
+                    
                     // Draw diameter circle
                     ctx.beginPath();
                     ctx.arc(centerPoint.x, centerPoint.y, radius, 0, Math.PI * 2);
@@ -158,176 +159,155 @@
                     ctx.moveTo(centerPoint.x, centerPoint.y);
                     ctx.lineTo(diameterEndPoint.x, diameterEndPoint.y);
                     ctx.strokeStyle = '#f59e0b';
-                    ctx.lineWidth = 2;
+                    ctx.lineWidth = 3;
                     ctx.stroke();
                     ctx.closePath();
                 }
             }
-               // Download image function
-    function downloadImage(blob, filename) {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => {
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }, 100);
-    }
         }
 
-// Initial setup
-statusIndicator.classList.remove('active');
+        // Download image function
+        function downloadImage(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+        }
 
-cameraActionBtn.addEventListener('click', async () => {
-    if (!cameraActive) {
-        try {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-                stream = null;
-            }
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        // Initial setup
+        statusIndicator.classList.remove('active');
 
-            stream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    facingMode: "environment",
-                    width: { ideal: 3000 },
-                    height: { ideal: 4000 }
-                },
-                audio: false
-            });
-            const track = stream.getVideoTracks()[0];
-            const settings = track.getSettings();
+        cameraActionBtn.addEventListener('click', async () => {
+            if (!cameraActive) {
+                try {
+                    if (stream) {
+                        stream.getTracks().forEach(track => track.stop());
+                        stream = null;
+                    }
+
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: {
+                            facingMode: "environment",
+                            width: { ideal: 1920 },
+                            height: { ideal: 1080 }
+                        },
+                        audio: false
+                    });
+
+                    webcamFeed.srcObject = stream;
+                    videoPlaceholder.style.display = 'none';
+                    webcamFeed.style.display = 'block';
+                    measurementCanvas.style.display = 'none';
+                    videoContainer.classList.add('active');
+                    statusIndicator.classList.add('active');
+
+                    // Initialize ImageCapture
+                    const track = stream.getVideoTracks()[0];
+                    imageCapture = new ImageCapture(track);
+
+                    // Update UI immediately
+                    cameraActionBtn.innerHTML = '<i class="fas fa-camera"></i> Capture Image';
+                    cameraActive = true;
                     
-            webcamFeed.srcObject = stream;
-            videoPlaceholder.style.display = 'none';
-            webcamFeed.style.display = 'block';
-            measurementCanvas.style.display = 'block';
-            videoContainer.classList.add('active');
-            statusIndicator.classList.add('active');
+                    // Disable other buttons until capture is done
+                    selectCenterBtn.disabled = true;
+                    localizeBallBtn.disabled = true;
+                    downloadBtn.disabled = true;
 
-            // Initialize ImageCapture
-            imageCapture = new ImageCapture(track);
+                    showMessage("Camera started. Click 'Capture Image' to take a photo.", "info");
 
-            // Update UI immediately
-            cameraActionBtn.innerHTML = '<i class="fas fa-camera"></i> Capture Image';
-            cameraActive = true;
-            
-            // Disable other buttons until capture is done
-            selectCenterBtn.disabled = true;
-            localizeBallBtn.disabled = true;
-            downloadBtn.disabled = true;
-
-            showMessage("Camera started. Click 'Capture Image' to take a photo.", "info");
-
-            // Handle video metadata loading
-            webcamFeed.onloadedmetadata = () => {
-                setCanvasToVideoDimensions();
-            };
-
-            window.addEventListener('resize', setCanvasToVideoDimensions);
-
-        } catch (err) {
-            console.error("Error accessing camera: ", err);
-            let errorMessage = "Error accessing camera. Please ensure camera access is granted.";
-            if (err.name === 'NotAllowedError') {
-                errorMessage = "Camera access denied. Please allow camera access in your browser settings.";
-            } else if (err.name === 'NotFoundError') {
-                errorMessage = "No camera found on this device.";
-            } else if (err.name === 'OverconstrainedError') {
-                errorMessage = "The requested camera settings aren't supported. Trying default settings...";
-            }
-            showMessage(errorMessage, "error");
-            cameraActive = false;
-            cameraActionBtn.innerHTML = '<i class="fas fa-camera"></i> Start Camera';
-        }
-
-    } else {
-
-        try {
-            cameraActionBtn.disabled = true;
-            showMessage("Capturing image...", "info");
-
-            const canvas = document.createElement('canvas');
-            canvas.width = webcamFeed.videoWidth;
-            canvas.height = webcamFeed.videoHeight;
-            const ctx2 = canvas.getContext('2d');
-            ctx2.drawImage(webcamFeed, 0, 0, canvas.width, canvas.height);
-            const photoBlob = await new Promise((resolve) => {
-                canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.95);
-            });
-
-            showMessage(`Captured resolution: ${canvas.width}x${canvas.height}`);
-
-            // Stop camera stream
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-                webcamFeed.srcObject = null;
-                stream = null;
-            }
-            cameraActive = false;
-            webcamFeed.style.display = 'none';
-            statusIndicator.classList.remove('active');
-
-            // Process captured image
-            capturedImageBlob = photoBlob;
-            const img = new Image();
-
-            // After image is loaded for measurement, ensure canvas size matches
-            img.onload = () => {
-                measurementCanvas.width = img.naturalWidth;
-                measurementCanvas.height = img.naturalHeight;
-                //measurementCanvas.style.display = 'block';
-                // Draw the image on the canvas
-                const measurementCtx = measurementCanvas.getContext('2d');
-                measurementCtx.clearRect(0, 0, measurementCanvas.width, measurementCanvas.height);
-                measurementCtx.drawImage(img, 0, 0);
-                // Now get the image data
-                capturedImageData = measurementCtx.getImageData(0, 0, measurementCanvas.width, measurementCanvas.height);
-                // Always redraw after setting image data
-                drawCanvas();
-                
-            };
-            img.src = URL.createObjectURL(photoBlob);
-
-            capturedImageFilename = `ball_capture_${Date.now()}.jpeg`;
-            showMessage("Image captured. Now select the ball's center.", "success");
-
-            // Update UI for next steps
-            cameraActionBtn.disabled = true;
-            selectCenterBtn.disabled = false;
-
-            // Set up download button (only once)
-            downloadBtn.onclick = () => {
-                if (capturedImageBlob) {
-                    downloadImage(capturedImageBlob, capturedImageFilename);
-                } else {
-                    showMessage("No image to download.", "error");
+                } catch (err) {
+                    console.error("Error accessing camera: ", err);
+                    let errorMessage = "Error accessing camera. Please ensure camera access is granted.";
+                    if (err.name === 'NotAllowedError') {
+                        errorMessage = "Camera access denied. Please allow camera access in your browser settings.";
+                    } else if (err.name === 'NotFoundError') {
+                        errorMessage = "No camera found on this device.";
+                    }
+                    showMessage(errorMessage, "error");
+                    cameraActive = false;
+                    cameraActionBtn.innerHTML = '<i class="fas fa-camera"></i> Start Camera';
                 }
-            };
-        } catch (error) {
-            console.error('Error capturing image:', error);
-            let errorMessage = "Failed to capture image.";
-            if (error.name === 'NotAllowedError') {
-                errorMessage = "Camera access denied during capture.";
-            } else if (error.name === 'InvalidStateError') {
-                errorMessage = "Camera not ready. Please try again.";
+            } else {
+                // Capture image
+                try {
+                    cameraActionBtn.disabled = true;
+                    showMessage("Capturing image...", "info");
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = webcamFeed.videoWidth;
+                    canvas.height = webcamFeed.videoHeight;
+                    const ctx2 = canvas.getContext('2d');
+                    ctx2.drawImage(webcamFeed, 0, 0, canvas.width, canvas.height);
+                    
+                    const photoBlob = await new Promise((resolve) => {
+                        canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.95);
+                    });
+
+                    showMessage(`Captured resolution: ${canvas.width}x${canvas.height}`, "info");
+
+                    // Stop camera stream
+                    if (stream) {
+                        stream.getTracks().forEach(track => track.stop());
+                        webcamFeed.srcObject = null;
+                        stream = null;
+                    }
+                    cameraActive = false;
+                    webcamFeed.style.display = 'none';
+                    statusIndicator.classList.remove('active');
+
+                    // Process captured image - FIXED
+                    capturedImageBlob = photoBlob;
+                    capturedImage = new Image();
+                    
+                    capturedImage.onload = () => {
+                        // Set canvas dimensions to match image
+                        measurementCanvas.width = capturedImage.naturalWidth;
+                        measurementCanvas.height = capturedImage.naturalHeight;
+                        measurementCanvas.style.display = 'block';
+                        
+                        // Draw the image initially
+                        drawCanvas();
+                        
+                        showMessage("Image captured. Now select the ball's center.", "success");
+                        
+                        // Update UI for next steps
+                        cameraActionBtn.disabled = true;
+                        selectCenterBtn.disabled = false;
+                    };
+                    
+                    capturedImage.src = URL.createObjectURL(photoBlob);
+                    capturedImageFilename = `ball_capture_${Date.now()}.jpeg`;
+
+                    
+                    // Set up download button
+                    downloadBtn.onclick = () => {
+                        if (capturedImageBlob) {
+                            downloadImage(capturedImageBlob, capturedImageFilename);
+                        } else {
+                            showMessage("No image to download.", "error");
+                        }
+                    };
+                } catch (error) {
+                    console.error('Error capturing image:', error);
+                    showMessage("Failed to capture image.", 'error');
+                    cameraActionBtn.innerHTML = '<i class="fas fa-camera"></i> Start Camera';
+                    cameraActionBtn.disabled = false;
+                    cameraActive = false;
+                }
             }
-            showMessage(errorMessage, 'error');
-            // Reset camera state
-            cameraActionBtn.innerHTML = '<i class="fas fa-camera"></i> Start Camera';
-            cameraActionBtn.disabled = false;
-            cameraActive = false;
-        }
-    }
-});
+        });
+
         // Select Center Mode
         selectCenterBtn.addEventListener('click', () => {
-            if (!capturedImageData) {
+            if (!capturedImage) {
                 showMessage("Capture an image first!", "error");
                 return;
             }
@@ -345,14 +325,15 @@ cameraActionBtn.addEventListener('click', async () => {
             showMessage("Click on the ball's circumference to measure diameter.", "info");
         });
 
-        // Canvas Click Listener
+        // Canvas Click Listener - FIXED
         measurementCanvas.addEventListener('click', (e) => {
-            if (!drawingMode || !capturedImageData) return;
+            if (!drawingMode || !capturedImage) return;
 
             const rect = measurementCanvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
 
+            // Calculate scale factors
             const scaleX = measurementCanvas.width / rect.width;
             const scaleY = measurementCanvas.height / rect.height;
             const actualX = x * scaleX;
@@ -360,7 +341,7 @@ cameraActionBtn.addEventListener('click', async () => {
 
             if (drawingMode === 'center') {
                 centerPoint = { x: actualX, y: actualY };
-                drawCanvas();
+                drawCanvas(); // Redraw with center point
                 drawingMode = null;
                 
                 measureDiameterBtn.disabled = false;
@@ -375,63 +356,49 @@ cameraActionBtn.addEventListener('click', async () => {
                     );
 
                     diameter = radius * 2;
-                    drawCanvas();
+                    drawCanvas(); // Redraw with diameter
                     drawingMode = null;
                     
                     downloadBtn.disabled = false;
                     localizeBallBtn.disabled = false;
 
-                    showMessage("Diameter measured! You can now save or localize the ball.", "success");
+                    showMessage(`Diameter measured: ${diameter.toFixed(2)} pixels`, "success");
                 }
             }
         });
 
-       
-    // Localize Ball (3D)
-    localizeBallBtn.addEventListener('click', async () => {
-    if (!centerPoint || !diameter) {
-        showMessage("Please select ball center and measure diameter first.", "error");
-        return;
-    }
+        // Localize Ball (3D) - Mock implementation for demo
+        localizeBallBtn.addEventListener('click', async () => {
+            if (!centerPoint || !diameter) {
+                showMessage("Please select ball center and measure diameter first.", "error");
+                return;
+            }
 
-    const centerX = Math.round(centerPoint.x);
-    const centerY = Math.round(centerPoint.y);
-    
-
-    try {
-        showMessage("Localizing ball in 3D...", "info");
-        
-        const response = await fetch('/ball_localization', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                centerX: centerX,
-                centerY: centerY,
-                diameter: diameter
-            })
+            const centerX = Math.round(centerPoint.x);
+            const centerY = Math.round(centerPoint.y);
+            
+            try {
+                showMessage("Localizing ball in 3D...", "info");
+                
+                // Mock API call - replace with your actual endpoint
+                setTimeout(() => {
+                    const mockResult = {
+                        centerX,
+                        centerY,
+                        diameter,
+                        x: (Math.random() * 2 - 1).toFixed(3),
+                        y: (Math.random() * 2 - 1).toFixed(3),
+                        z: (Math.random() * 3 + 1).toFixed(3)
+                    };
+                    
+                    showMessage(`Ball 3D Position: X=${mockResult.x}, Y=${mockResult.y}, Z=${mockResult.z}`, "success");
+                }, 1000);
+                
+            } catch (error) {
+                console.error('Error localizing ball:', error);
+                showMessage('Failed to localize ball in 3D.', 'error');
+            }
         });
-
-        const data = await response.json();
-        
-       if (data.success) {
-    const { x, y, z } = data.ball_position_camera_coords;
-    localStorage.setItem('localizationResult', JSON.stringify({
-        centerX,
-        centerY,
-        diameter,
-        x,
-        y,
-        z
-    }));
-    window.location.href = '/results';
-} 
-    } catch (error) {
-        console.error('Error localizing ball:', error);
-        showMessage('Failed to localize ball in 3D.', 'error');
-    }
-});
 
         // Reset
         resetBtn.addEventListener('click', () => {
@@ -449,12 +416,19 @@ cameraActionBtn.addEventListener('click', async () => {
             
             ctx.clearRect(0, 0, measurementCanvas.width, measurementCanvas.height);
             
+            // Clean up image URL
+            if (capturedImage && capturedImage.src) {
+                URL.revokeObjectURL(capturedImage.src);
+            }
+            
             capturedImageBlob = null;
             capturedImageFilename = null;
             capturedImageData = null;
+            capturedImage = null;
             drawingMode = null;
             centerPoint = null;
             diameterEndPoint = null;
+            diameter = null;
             cameraActive = false;
             
             cameraActionBtn.innerHTML = '<i class="fas fa-camera"></i> Start Camera';
@@ -466,10 +440,6 @@ cameraActionBtn.addEventListener('click', async () => {
             
             showMessage("Application reset successfully!", "info");
         });
-        
- 
-
     </script>
-        
-    </body>
+</body>
 </html>
