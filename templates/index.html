@@ -325,7 +325,7 @@
             showMessage("Click on the ball's circumference to measure diameter.", "info");
         });
 
-        // Canvas Click Listener - FIXED
+        // Canvas Click Listener
         measurementCanvas.addEventListener('click', (e) => {
             if (!drawingMode || !capturedImage) return;
 
@@ -389,7 +389,8 @@
             body: JSON.stringify({
                 centerX: centerX,
                 centerY: centerY,
-                diameter: diameter
+                diameter: diameter,
+                image_filename: capturedImageFilename
             })
         });
 
