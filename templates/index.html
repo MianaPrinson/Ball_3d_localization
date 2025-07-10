@@ -283,9 +283,7 @@ cameraActionBtn.addEventListener('click', async () => {
                 measurementCtx.drawImage(img, 0, 0);
                 // Now get the image data
                 capturedImageData = measurementCtx.getImageData(0, 0, measurementCanvas.width, measurementCanvas.height);
-                // Redraw measurements if any
-                drawCanvas();
-                setCanvasToVideoDimensions();
+                drawCanvas(); // Redraw the canvas with the captured image
             };
             img.src = URL.createObjectURL(photoBlob);
 
