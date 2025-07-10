@@ -57,26 +57,6 @@ except Exception as e:
 def index():
     return render_template('index.html')
 
-@app.route('/upload_image', methods=['POST'])
-def upload_image():
-
-    try:                        
-        data = request.get_json()
-        if 'image' not in data:
-            return jsonify({'success': False, 'message': 'No image data provided.'}), 400
-        
-        image_data_b64 = data['image']
-        if ',' in image_data_b64:
-            image_data_b64 = image_data_b64.split(',')[1]
-
-        return jsonify({'success': True, 'message': 'Image received (not saved).', 'filename': None}), 200
-
-    except Exception as e:
-        print(f"Error uploading image: {e}")
-        return jsonify({'success': False, 'message': f'Server error: {str(e)}'}), 500
-
-
-
 @app.route('/ball_localization', methods=["POST"])
 def localization():
 
