@@ -148,7 +148,7 @@ def localization():
         return jsonify({'success': False, 'message': f'Server error: {str(e)}'}), 500    
 
 
-@app.route('/results', methods=['POST'])
+@app.route('/results', methods=['GET','POST'])
 def results():
     return render_template('result.html')
 
