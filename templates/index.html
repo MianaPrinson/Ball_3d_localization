@@ -87,6 +87,14 @@
         let capturedImageData = null;
         let imageCapture = null; 
 
+        function blobToBase64(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
 
         function showMessage(message, type = 'success') {
             messageBox.textContent = message;
@@ -118,7 +126,7 @@
 
  // Draw function
         function drawCanvas() {
-            //ctx.clearRect(0, 0, measurementCanvas.width, measurementCanvas.height);
+            ctx.clearRect(0, 0, measurementCanvas.width, measurementCanvas.height);
 
             if (capturedImageData) {
                 ctx.putImageData(capturedImageData, 0, 0);
@@ -162,6 +170,20 @@
                     ctx.closePath();
                 }
             }
+               // Download image function
+    function downloadImage(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 100);
+    }
         }
 
 // Initial setup
@@ -266,17 +288,32 @@ cameraActionBtn.addEventListener('click', async () => {
             img.onload = () => {
                 measurementCanvas.width = img.naturalWidth;
                 measurementCanvas.height = img.naturalHeight;
+                measurementCanvas.style.display = 'block';
                 // Draw the image on the canvas
                 const measurementCtx = measurementCanvas.getContext('2d');
                 measurementCtx.clearRect(0, 0, measurementCanvas.width, measurementCanvas.height);
                 measurementCtx.drawImage(img, 0, 0);
                 // Now get the image data
                 capturedImageData = measurementCtx.getImageData(0, 0, measurementCanvas.width, measurementCanvas.height);
+                    drawCanvas();
+                    setCanvasToVideoDimensions();
                 
             };
             img.src = URL.createObjectURL(photoBlob);
 
+            // Upload image to server
+            const base64Image = await blobToBase64(photoBlob);
+            const response = await fetch('/upload_image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: base64Image })
+            });
+
+            const result = await response.json();
             
+            if (result.success) {
+                capturedImageFilename = result.filename;
+                showMessage("Image captured and saved. Now select the ball's center.", "success");
             capturedImageFilename = `ball_capture_${Date.now()}.jpeg`;
             showMessage("Image captured. Now select the ball's center.", "success");
 
@@ -451,20 +488,7 @@ cameraActionBtn.addEventListener('click', async () => {
             showMessage("Application reset successfully!", "info");
         });
         
-        // Download image function
-function downloadImage(blob, filename) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }, 100);
-}
+ 
 
     </script>
         
