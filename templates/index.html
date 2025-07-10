@@ -115,15 +115,18 @@
             }
         }
 
-        function setCanvasToVideoDimensions() {
-    // Always match canvas size to video or image
+ function setCanvasToVideoDimensions() {
     if (webcamFeed.style.display !== 'none' && webcamFeed.videoWidth && webcamFeed.videoHeight) {
         measurementCanvas.width = webcamFeed.videoWidth;
         measurementCanvas.height = webcamFeed.videoHeight;
     } else if (capturedImageData) {
         measurementCanvas.width = capturedImageData.width;
         measurementCanvas.height = capturedImageData.height;
-    }
+    }   
+    // Match display size to container
+    const container = videoContainer.getBoundingClientRect();
+    measurementCanvas.style.width = `${container.width}px`;
+    measurementCanvas.style.height = `${container.height}px`;
 }
 
  // Draw function
@@ -173,6 +176,21 @@
                 }
             }
         }
+      
+// Download image function
+function downloadImage(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, 100);
+}
 
 // Initial setup
 statusIndicator.classList.remove('active');
@@ -273,8 +291,7 @@ cameraActionBtn.addEventListener('click', async () => {
             capturedImageBlob = photoBlob;
             const img = new Image();
             
-
-             // After image is loaded for measurement, ensure canvas size matches
+            
 img.onload = () => {
     measurementCanvas.width = img.naturalWidth;
     measurementCanvas.height = img.naturalHeight;
@@ -484,20 +501,7 @@ img.onload = () => {
             showMessage("Application reset successfully!", "info");
         });
         
-        // Download image function
-function downloadImage(blob, filename) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }, 100);
-}
+ 
 
     </script>
         

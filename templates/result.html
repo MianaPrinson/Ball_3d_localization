@@ -70,6 +70,17 @@
             }, 5000);
         }
 
+        function formatValue(val) {
+            if (typeof val === 'number') {
+                return val.toFixed(2);
+            }
+            if (val !== undefined && val !== null && !isNaN(val)) {
+                const num = Number(val);
+                if (!isNaN(num)) return num.toFixed(2);
+            }
+            return 'N/A';
+        }
+
   document.addEventListener('DOMContentLoaded', function() {
     try {
         // Retrieve the stored data from localStorage
@@ -78,12 +89,12 @@
             const result = JSON.parse(storedData);
             const { centerX, centerY, diameter, x, y, z } = result;
 
-            centerXDisplay.textContent = centerX ?? 'N/A';
-            centerYDisplay.textContent = centerY ?? 'N/A';
-            diameterDisplay.textContent = diameter ?? 'N/A';
-            ballXDisplay.textContent = x ?? 'N/A';
-            ballYDisplay.textContent = y ?? 'N/A';
-            ballZDisplay.textContent = z ?? 'N/A';
+            centerXDisplay.textContent = formatValue(centerX);
+            centerYDisplay.textContent = formatValue(centerY);
+            diameterDisplay.textContent = formatValue(diameter);
+            ballXDisplay.textContent = formatValue(x);
+            ballYDisplay.textContent = formatValue(y);
+            ballZDisplay.textContent = formatValue(z);
         } else {
             showMessage("No localization data found for this image.", "error");
         }
