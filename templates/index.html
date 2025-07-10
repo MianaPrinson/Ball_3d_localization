@@ -116,9 +116,13 @@
         }
 
         function setCanvasToVideoDimensions() {
-    if (webcamFeed.videoWidth && webcamFeed.videoHeight) {
+    // Always match canvas size to video or image
+    if (webcamFeed.style.display !== 'none' && webcamFeed.videoWidth && webcamFeed.videoHeight) {
         measurementCanvas.width = webcamFeed.videoWidth;
         measurementCanvas.height = webcamFeed.videoHeight;
+    } else if (capturedImageData) {
+        measurementCanvas.width = capturedImageData.width;
+        measurementCanvas.height = capturedImageData.height;
     }
 }
 
@@ -138,7 +142,7 @@
                 // Draw center point
                 ctx.beginPath();
                 ctx.arc(centerPoint.x, centerPoint.y, 8, 0, Math.PI * 2);
-                ctx.fillStyle = '#ef4444';
+                ctx.fillStyle = '#000000';
                 ctx.fill();
                 ctx.strokeStyle = '#ffffff';
                 ctx.lineWidth = 3;
@@ -150,7 +154,6 @@
                         Math.pow(diameterEndPoint.x - centerPoint.x, 2) +
                         Math.pow(diameterEndPoint.y - centerPoint.y, 2)
                     );
-                    
                     // Draw diameter circle
                     ctx.beginPath();
                     ctx.arc(centerPoint.x, centerPoint.y, radius, 0, Math.PI * 2);
@@ -271,15 +274,16 @@ cameraActionBtn.addEventListener('click', async () => {
             const img = new Image();
             
 
-             img.onload = () => {
-            measurementCanvas.width = img.naturalWidth;
-            measurementCanvas.height = img.naturalHeight;
-            const measurementCtx = measurementCanvas.getContext('2d');
-            measurementCtx.drawImage(img, 0, 0);
-            
-            capturedImageData = measurementCtx.getImageData(0, 0, measurementCanvas.width, measurementCanvas.height);
-            measurementCanvas.style.display = 'block';
-        };
+             // After image is loaded for measurement, ensure canvas size matches
+img.onload = () => {
+    measurementCanvas.width = img.naturalWidth;
+    measurementCanvas.height = img.naturalHeight;
+    const measurementCtx = measurementCanvas.getContext('2d');
+    measurementCtx.drawImage(img, 0, 0);
+    capturedImageData = measurementCtx.getImageData(0, 0, measurementCanvas.width, measurementCanvas.height);
+    measurementCanvas.style.display = 'block';
+    setCanvasToVideoDimensions();
+};
         img.src = URL.createObjectURL(photoBlob);
 
             // Upload image to server
@@ -474,6 +478,22 @@ cameraActionBtn.addEventListener('click', async () => {
             
             showMessage("Application reset successfully!", "info");
         });
+        
+        // Download image function
+function downloadImage(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, 100);
+}
+
     </script>
         
     </body>
