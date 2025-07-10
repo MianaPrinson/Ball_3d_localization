@@ -295,8 +295,7 @@ cameraActionBtn.addEventListener('click', async () => {
 img.onload = () => {
     measurementCanvas.width = img.naturalWidth;
     measurementCanvas.height = img.naturalHeight;
-    // Remove hiding logic: always show canvas
-    measurementCanvas.style.display = 'block';
+  
     // Draw the image on the canvas
     const measurementCtx = measurementCanvas.getContext('2d');
     measurementCtx.clearRect(0, 0, measurementCanvas.width, measurementCanvas.height);
