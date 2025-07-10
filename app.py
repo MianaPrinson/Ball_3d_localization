@@ -74,7 +74,7 @@ def localization():
         center_x = data.get('centerX')
         center_y = data.get('centerY')
         diameter = data.get('diameter')
-        image_filename = data.get('imageFilename')
+        image_filename = data.get('image_filename')
         
 
         if any(v is None for v in [center_x, center_y, diameter]):
@@ -108,7 +108,7 @@ def localization():
             "diameter": diameter,
             "ball_coordinates": [ball_x_camera, ball_y_camera, ball_z_camera]
         }
-        print(db_entry)
+
         result = collection.insert_one(db_entry)
         saved_id = str(result.inserted_id)
 
