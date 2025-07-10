@@ -278,10 +278,15 @@ cameraActionBtn.addEventListener('click', async () => {
 img.onload = () => {
     measurementCanvas.width = img.naturalWidth;
     measurementCanvas.height = img.naturalHeight;
-    const measurementCtx = measurementCanvas.getContext('2d');
-    measurementCtx.drawImage(img, 0, 0);
-    capturedImageData = measurementCtx.getImageData(0, 0, measurementCanvas.width, measurementCanvas.height);
     measurementCanvas.style.display = 'block';
+    // Draw the image on the canvas
+    const measurementCtx = measurementCanvas.getContext('2d');
+    measurementCtx.clearRect(0, 0, measurementCanvas.width, measurementCanvas.height);
+    measurementCtx.drawImage(img, 0, 0);
+    // Now get the image data
+    capturedImageData = measurementCtx.getImageData(0, 0, measurementCanvas.width, measurementCanvas.height);
+    // Redraw measurements if any
+    drawCanvas();
     setCanvasToVideoDimensions();
 };
         img.src = URL.createObjectURL(photoBlob);
