@@ -276,15 +276,13 @@ cameraActionBtn.addEventListener('click', async () => {
             };
             img.src = URL.createObjectURL(photoBlob);
 
-            // No upload to server, just enable next steps
+            
             capturedImageFilename = `ball_capture_${Date.now()}.jpeg`;
             showMessage("Image captured. Now select the ball's center.", "success");
 
             // Update UI for next steps
             cameraActionBtn.disabled = true;
             selectCenterBtn.disabled = false;
-            // Enable download after diameter is measured
-            // downloadBtn.disabled = false; (will be enabled after diameter)
 
             // Set up download button (only once)
             downloadBtn.onclick = () => {
