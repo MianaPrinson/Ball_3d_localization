@@ -87,15 +87,6 @@
         let capturedImageData = null;
         let imageCapture = null; 
 
-        
-  function blobToBase64(blob) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-    });
-}
 
         function showMessage(message, type = 'success') {
             messageBox.textContent = message;
@@ -104,7 +95,6 @@
                 messageBox.classList.remove('show');
             }, 4000);
         }
-
 
         function updateDataDisplay(element, value) {
             element.textContent = value;
@@ -116,19 +106,13 @@
         }
 
         function setCanvasToVideoDimensions() {
-    // Always match canvas size to video or image, but only update if different to avoid clearing
+    // Always match canvas size to video or image
     if (webcamFeed.style.display !== 'none' && webcamFeed.videoWidth && webcamFeed.videoHeight) {
-        if (measurementCanvas.width !== webcamFeed.videoWidth || measurementCanvas.height !== webcamFeed.videoHeight) {
-            measurementCanvas.width = webcamFeed.videoWidth;
-            measurementCanvas.height = webcamFeed.videoHeight;
-            drawCanvas();
-        }
+        measurementCanvas.width = webcamFeed.videoWidth;
+        measurementCanvas.height = webcamFeed.videoHeight;
     } else if (capturedImageData) {
-        if (measurementCanvas.width !== capturedImageData.width || measurementCanvas.height !== capturedImageData.height) {
-            measurementCanvas.width = capturedImageData.width;
-            measurementCanvas.height = capturedImageData.height;
-            drawCanvas();
-        }
+        measurementCanvas.width = capturedImageData.width;
+        measurementCanvas.height = capturedImageData.height;
     }
 }
 
@@ -282,14 +266,13 @@ cameraActionBtn.addEventListener('click', async () => {
             img.onload = () => {
                 measurementCanvas.width = img.naturalWidth;
                 measurementCanvas.height = img.naturalHeight;
-                measurementCanvas.style.display = 'block';
                 // Draw the image on the canvas
                 const measurementCtx = measurementCanvas.getContext('2d');
                 measurementCtx.clearRect(0, 0, measurementCanvas.width, measurementCanvas.height);
                 measurementCtx.drawImage(img, 0, 0);
                 // Now get the image data
                 capturedImageData = measurementCtx.getImageData(0, 0, measurementCanvas.width, measurementCanvas.height);
-                drawCanvas(); // Redraw the canvas with the captured image
+                
             };
             img.src = URL.createObjectURL(photoBlob);
 
@@ -298,8 +281,7 @@ cameraActionBtn.addEventListener('click', async () => {
             showMessage("Image captured. Now select the ball's center.", "success");
 
             // Update UI for next steps
-            cameraActionBtn.innerHTML = '<i class="fas fa-camera"></i> Start Camera';
-            cameraActionBtn.disabled = false;
+            cameraActionBtn.disabled = true;
             selectCenterBtn.disabled = false;
             // Enable download after diameter is measured
             // downloadBtn.disabled = false; (will be enabled after diameter)
