@@ -115,18 +115,15 @@
             }
         }
 
- function setCanvasToVideoDimensions() {
+        function setCanvasToVideoDimensions() {
+    // Always match canvas size to video or image
     if (webcamFeed.style.display !== 'none' && webcamFeed.videoWidth && webcamFeed.videoHeight) {
         measurementCanvas.width = webcamFeed.videoWidth;
         measurementCanvas.height = webcamFeed.videoHeight;
     } else if (capturedImageData) {
         measurementCanvas.width = capturedImageData.width;
         measurementCanvas.height = capturedImageData.height;
-    }   
-    // Match display size to container
-    const container = videoContainer.getBoundingClientRect();
-    measurementCanvas.style.width = `${container.width}px`;
-    measurementCanvas.style.height = `${container.height}px`;
+    }
 }
 
  // Draw function
@@ -176,21 +173,6 @@
                 }
             }
         }
-      
-// Download image function
-function downloadImage(blob, filename) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }, 100);
-}
 
 // Initial setup
 statusIndicator.classList.remove('active');
@@ -291,7 +273,8 @@ cameraActionBtn.addEventListener('click', async () => {
             capturedImageBlob = photoBlob;
             const img = new Image();
             
-            
+
+             // After image is loaded for measurement, ensure canvas size matches
 img.onload = () => {
     measurementCanvas.width = img.naturalWidth;
     measurementCanvas.height = img.naturalHeight;
@@ -305,30 +288,42 @@ img.onload = () => {
     // Redraw measurements if any
     drawCanvas();
     setCanvasToVideoDimensions();
-    // Enable buttons for next steps
-    cameraActionBtn.innerHTML = '<i class="fas fa-camera"></i> Start Camera';
-    cameraActionBtn.disabled = false;
-    selectCenterBtn.disabled = false;
-    measureDiameterBtn.disabled = true;
-    localizeBallBtn.disabled = true;
-    downloadBtn.disabled = false;
 };
         img.src = URL.createObjectURL(photoBlob);
 
-            // Generate a filename for the image
-            const filename = `ball_capture_${Date.now()}.jpeg`;
-            capturedImageFilename = filename;
-            showMessage("Image captured. Now select the ball's center.", "success");
+            // Upload image to server
+            const base64Image = await blobToBase64(photoBlob);
+            const response = await fetch('/upload_image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: base64Image })
+            });
 
-            // Enable download button and set up download
-            downloadBtn.disabled = false;
-            downloadBtn.addEventListener('click', () => {
-                if (capturedImageBlob) {
-                    downloadImage(capturedImageBlob, filename);
-                } else {
-                    showMessage("No image to download.", "error");
-                }
-            }, { once: true });
+            const result = await response.json();
+            
+            if (result.success) {
+                capturedImageFilename = result.filename;
+                showMessage("Image captured and saved. Now select the ball's center.", "success");
+                
+                // Update UI for next steps
+                cameraActionBtn.innerHTML = '<i class="fas fa-camera"></i> Start Camera';
+                cameraActionBtn.disabled = false;
+                selectCenterBtn.disabled = false;
+                
+
+
+        downloadBtn.addEventListener('click', () => {
+            if (capturedImageBlob) {
+                const filename = `ball_capture_${Date.now()}.jpeg`;
+                downloadImage(capturedImageBlob, filename);
+            } else {
+                showMessage("No image to download.", "error");
+            }
+        }, { once: true });
+
+            } else {
+                throw new Error(result.message || "Failed to save image");
+            }
 
         } catch (error) {
             console.error('Error capturing image:', error);
@@ -464,7 +459,7 @@ img.onload = () => {
             
             webcamFeed.srcObject = null;
             webcamFeed.style.display = 'none';
-            measurementCanvas.style.display = 'none'; 
+            measurementCanvas.style.display = 'none';
             videoPlaceholder.style.display = 'block';
             videoContainer.classList.remove('active');
             statusIndicator.classList.remove('active');
