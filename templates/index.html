@@ -367,38 +367,51 @@
             }
         });
 
-        // Localize Ball (3D) - Mock implementation for demo
-        localizeBallBtn.addEventListener('click', async () => {
-            if (!centerPoint || !diameter) {
-                showMessage("Please select ball center and measure diameter first.", "error");
-                return;
-            }
+ // Localize Ball (3D)
+    localizeBallBtn.addEventListener('click', async () => {
+    if (!centerPoint || !diameter) {
+        showMessage("Please select ball center and measure diameter first.", "error");
+        return;
+    }
 
-            const centerX = Math.round(centerPoint.x);
-            const centerY = Math.round(centerPoint.y);
-            
-            try {
-                showMessage("Localizing ball in 3D...", "info");
-                
-                // Mock API call - replace with your actual endpoint
-                setTimeout(() => {
-                    const mockResult = {
-                        centerX,
-                        centerY,
-                        diameter,
-                        x: (Math.random() * 2 - 1).toFixed(3),
-                        y: (Math.random() * 2 - 1).toFixed(3),
-                        z: (Math.random() * 3 + 1).toFixed(3)
-                    };
-                    
-                    showMessage(`Ball 3D Position: X=${mockResult.x}, Y=${mockResult.y}, Z=${mockResult.z}`, "success");
-                }, 1000);
-                
-            } catch (error) {
-                console.error('Error localizing ball:', error);
-                showMessage('Failed to localize ball in 3D.', 'error');
-            }
+    const centerX = Math.round(centerPoint.x);
+    const centerY = Math.round(centerPoint.y);
+    
+
+    try {
+        showMessage("Localizing ball in 3D...", "info");
+        
+        const response = await fetch('/ball_localization', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                centerX: centerX,
+                centerY: centerY,
+                diameter: diameter
+            })
         });
+
+        const data = await response.json();
+        
+       if (data.success) {
+    const { x, y, z } = data.ball_position_camera_coords;
+    localStorage.setItem('localizationResult', JSON.stringify({
+        centerX,
+        centerY,
+        diameter,
+        x,
+        y,
+        z
+    }));
+    window.location.href = '/results';
+} 
+    } catch (error) {
+        console.error('Error localizing ball:', error);
+        showMessage('Failed to localize ball in 3D.', 'error');
+    }
+});
 
         // Reset
         resetBtn.addEventListener('click', () => {
