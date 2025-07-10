@@ -295,7 +295,7 @@ cameraActionBtn.addEventListener('click', async () => {
 img.onload = () => {
     measurementCanvas.width = img.naturalWidth;
     measurementCanvas.height = img.naturalHeight;
-  
+    measurementCanvas.style.display = 'block';
     // Draw the image on the canvas
     const measurementCtx = measurementCanvas.getContext('2d');
     measurementCtx.clearRect(0, 0, measurementCanvas.width, measurementCanvas.height);
@@ -305,6 +305,13 @@ img.onload = () => {
     // Redraw measurements if any
     drawCanvas();
     setCanvasToVideoDimensions();
+    // Enable buttons for next steps
+    cameraActionBtn.innerHTML = '<i class="fas fa-camera"></i> Start Camera';
+    cameraActionBtn.disabled = false;
+    selectCenterBtn.disabled = false;
+    measureDiameterBtn.disabled = true;
+    localizeBallBtn.disabled = true;
+    downloadBtn.disabled = false;
 };
         img.src = URL.createObjectURL(photoBlob);
 
@@ -457,7 +464,7 @@ img.onload = () => {
             
             webcamFeed.srcObject = null;
             webcamFeed.style.display = 'none';
-            measurementCanvas.style.display = 'none';
+            measurementCanvas.style.display = 'none'; 
             videoPlaceholder.style.display = 'block';
             videoContainer.classList.remove('active');
             statusIndicator.classList.remove('active');
