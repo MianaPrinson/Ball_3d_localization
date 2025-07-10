@@ -256,7 +256,6 @@ cameraActionBtn.addEventListener('click', async () => {
                 canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.95);
             });
 
-            
             showMessage(`Captured resolution: ${canvas.width}x${canvas.height}`);
 
             // Stop camera stream
@@ -272,58 +271,43 @@ cameraActionBtn.addEventListener('click', async () => {
             // Process captured image
             capturedImageBlob = photoBlob;
             const img = new Image();
-            
 
-             // After image is loaded for measurement, ensure canvas size matches
-img.onload = () => {
-    measurementCanvas.width = img.naturalWidth;
-    measurementCanvas.height = img.naturalHeight;
-    measurementCanvas.style.display = 'block';
-    // Draw the image on the canvas
-    const measurementCtx = measurementCanvas.getContext('2d');
-    measurementCtx.clearRect(0, 0, measurementCanvas.width, measurementCanvas.height);
-    measurementCtx.drawImage(img, 0, 0);
-    // Now get the image data
-    capturedImageData = measurementCtx.getImageData(0, 0, measurementCanvas.width, measurementCanvas.height);
-    // Redraw measurements if any
-    drawCanvas();
-    setCanvasToVideoDimensions();
-};
-        img.src = URL.createObjectURL(photoBlob);
+            // After image is loaded for measurement, ensure canvas size matches
+            img.onload = () => {
+                measurementCanvas.width = img.naturalWidth;
+                measurementCanvas.height = img.naturalHeight;
+                measurementCanvas.style.display = 'block';
+                // Draw the image on the canvas
+                const measurementCtx = measurementCanvas.getContext('2d');
+                measurementCtx.clearRect(0, 0, measurementCanvas.width, measurementCanvas.height);
+                measurementCtx.drawImage(img, 0, 0);
+                // Now get the image data
+                capturedImageData = measurementCtx.getImageData(0, 0, measurementCanvas.width, measurementCanvas.height);
+                // Redraw measurements if any
+                drawCanvas();
+                setCanvasToVideoDimensions();
+            };
+            img.src = URL.createObjectURL(photoBlob);
 
-            // Upload image to server
-            const base64Image = await blobToBase64(photoBlob);
-            const response = await fetch('/upload_image', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ image: base64Image })
-            });
+            // No upload to server, just enable next steps
+            capturedImageFilename = `ball_capture_${Date.now()}.jpeg`;
+            showMessage("Image captured. Now select the ball's center.", "success");
 
-            const result = await response.json();
-            
-            if (result.success) {
-                capturedImageFilename = result.filename;
-                showMessage("Image captured and saved. Now select the ball's center.", "success");
-                
-                // Update UI for next steps
-                cameraActionBtn.innerHTML = '<i class="fas fa-camera"></i> Start Camera';
-                cameraActionBtn.disabled = false;
-                selectCenterBtn.disabled = false;
-                
+            // Update UI for next steps
+            cameraActionBtn.innerHTML = '<i class="fas fa-camera"></i> Start Camera';
+            cameraActionBtn.disabled = false;
+            selectCenterBtn.disabled = false;
+            // Enable download after diameter is measured
+            // downloadBtn.disabled = false; (will be enabled after diameter)
 
-
-        downloadBtn.addEventListener('click', () => {
-            if (capturedImageBlob) {
-                const filename = `ball_capture_${Date.now()}.jpeg`;
-                downloadImage(capturedImageBlob, filename);
-            } else {
-                showMessage("No image to download.", "error");
-            }
-        }, { once: true });
-
-            } else {
-                throw new Error(result.message || "Failed to save image");
-            }
+            // Set up download button (only once)
+            downloadBtn.onclick = () => {
+                if (capturedImageBlob) {
+                    downloadImage(capturedImageBlob, capturedImageFilename);
+                } else {
+                    showMessage("No image to download.", "error");
+                }
+            };
 
         } catch (error) {
             console.error('Error capturing image:', error);
@@ -334,7 +318,6 @@ img.onload = () => {
                 errorMessage = "Camera not ready. Please try again.";
             }
             showMessage(errorMessage, 'error');
-            
             // Reset camera state
             cameraActionBtn.innerHTML = '<i class="fas fa-camera"></i> Start Camera';
             cameraActionBtn.disabled = false;
