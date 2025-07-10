@@ -262,8 +262,8 @@ cameraActionBtn.addEventListener('click', async () => {
             const canvas = document.createElement('canvas');
             canvas.width = webcamFeed.videoWidth;
             canvas.height = webcamFeed.videoHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(webcamFeed, 0, 0, canvas.width, canvas.height);
+            const ctx2 = canvas.getContext('2d');
+            ctx2.drawImage(webcamFeed, 0, 0, canvas.width, canvas.height);
             const photoBlob = await new Promise((resolve) => {
                 canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.95);
             });
@@ -301,19 +301,6 @@ cameraActionBtn.addEventListener('click', async () => {
             };
             img.src = URL.createObjectURL(photoBlob);
 
-            // Upload image to server
-            const base64Image = await blobToBase64(photoBlob);
-            const response = await fetch('/upload_image', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ image: base64Image })
-            });
-
-            const result = await response.json();
-            
-            if (result.success) {
-                capturedImageFilename = result.filename;
-                showMessage("Image captured and saved. Now select the ball's center.", "success");
             capturedImageFilename = `ball_capture_${Date.now()}.jpeg`;
             showMessage("Image captured. Now select the ball's center.", "success");
 
@@ -329,7 +316,6 @@ cameraActionBtn.addEventListener('click', async () => {
                     showMessage("No image to download.", "error");
                 }
             };
-
         } catch (error) {
             console.error('Error capturing image:', error);
             let errorMessage = "Failed to capture image.";
