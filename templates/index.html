@@ -116,13 +116,19 @@
         }
 
         function setCanvasToVideoDimensions() {
-    // Always match canvas size to video or image
+    // Always match canvas size to video or image, but only update if different to avoid clearing
     if (webcamFeed.style.display !== 'none' && webcamFeed.videoWidth && webcamFeed.videoHeight) {
-        measurementCanvas.width = webcamFeed.videoWidth;
-        measurementCanvas.height = webcamFeed.videoHeight;
+        if (measurementCanvas.width !== webcamFeed.videoWidth || measurementCanvas.height !== webcamFeed.videoHeight) {
+            measurementCanvas.width = webcamFeed.videoWidth;
+            measurementCanvas.height = webcamFeed.videoHeight;
+            drawCanvas();
+        }
     } else if (capturedImageData) {
-        measurementCanvas.width = capturedImageData.width;
-        measurementCanvas.height = capturedImageData.height;
+        if (measurementCanvas.width !== capturedImageData.width || measurementCanvas.height !== capturedImageData.height) {
+            measurementCanvas.width = capturedImageData.width;
+            measurementCanvas.height = capturedImageData.height;
+            drawCanvas();
+        }
     }
 }
 
