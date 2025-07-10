@@ -195,8 +195,8 @@
                     stream = await navigator.mediaDevices.getUserMedia({
                         video: {
                             facingMode: "environment",
-                            width: { ideal: 3000 },
-                            height: { ideal: 4000 }
+                            width: { ideal: 1920 },
+                            height: { ideal: 1080 }
                         },
                         audio: false
                     });
@@ -272,12 +272,14 @@
                         measurementCanvas.width = capturedImage.naturalWidth;
                         measurementCanvas.height = capturedImage.naturalHeight;
                         measurementCanvas.style.display = 'block';
-                        
+
                         // Draw the image initially
                         drawCanvas();
-                        
+
+                        // Show resolution message
+                        showMessage(`Captured image resolution: ${capturedImage.naturalWidth} x ${capturedImage.naturalHeight}`, "info");
                         showMessage("Image captured. Now select the ball's center.", "success");
-                        
+
                         // Update UI for next steps
                         cameraActionBtn.disabled = true;
                         selectCenterBtn.disabled = false;
